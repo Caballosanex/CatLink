@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { fetchStations } from '../../services/api';
 import { Zap, Users, Wifi, WifiOff, Filter, Brain } from 'lucide-react';
@@ -40,6 +40,16 @@ function makeIcon(status) {
         iconSize: [32, 32],
         iconAnchor: [16, 16],
     });
+}
+
+function FlyToStation({ station }) {
+    const map = useMap();
+    useEffect(() => {
+        if (station) {
+            map.flyTo([station.lat, station.lng], 15, { duration: 1 });
+        }
+    }, [station, map]);
+    return null;
 }
 
 function timeSince(iso) {
@@ -110,6 +120,7 @@ export default function StationMap() {
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     />
+                    <FlyToStation station={selected} />
                     {filtered.map(station => (
                         <Marker key={station.id} position={[station.lat, station.lng]}
                             icon={makeIcon(station.status)}
