@@ -70,5 +70,17 @@
     "status": "available",
     "zone": "centro",
     "iot_phone": "+34900000006"
+  },
+  {
+    "id": "CHG-007",
+    "name": "Sants-Estació",
+    "address": "Plaça dels Països Catalans, 1, 08014 Barcelona",
+    "lat": 41.3726,
+    "lon": 2.1499,
+    "power_kw": 150,
+    "connectors": ["CCS2", "CHAdeMO"],
+    "status": "available",
+    "zone": "sur",
+    "iot_phone": "+34900000007"
   }
 ]
