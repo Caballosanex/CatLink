@@ -9,6 +9,17 @@ import './Reservation.css';
 
 const STEPS = ['Identity', 'Location', 'Demand', 'Confirm'];
 
+/** Haversine distance in km between two lat/lon points */
+function distanceKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export default function Reservation() {
     const { user } = useAuth();
     const [step, setStep] = useState(0);
@@ -19,6 +30,9 @@ export default function Reservation() {
     const [demand, setDemand] = useState(60);
     const [charging, setCharging] = useState(false);
     const [done, setDone] = useState(false);
+    const [sessionResult, setSessionResult] = useState(null);
+    const [userCoords, setUserCoords] = useState({ lat: 41.387, lon: 2.17 });
+    const [locError, setLocError] = useState(null);
 
     useEffect(() => {
         fetchStations().then((data) => {
@@ -38,37 +52,98 @@ export default function Reservation() {
 
     const handleLocate = () => {
         setLocating(true);
-        setTimeout(() => { setLocating(false); setLocDone(true); }, 2000);
+        setLocError(null);
+        if (!navigator.geolocation) {
+            setLocError('Geolocation not supported by your browser');
+            setLocating(false);
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                setUserCoords(coords);
+                // Auto-select nearest available station
+                const available = stations.filter(s => s.status !== 'offline');
+                if (available.length) {
+                    const nearest = available.reduce((best, s) => {
+                        const d = distanceKm(coords.lat, coords.lon, s.lat, s.lng);
+                        return d < best.d ? { s, d } : best;
+                    }, { s: available[0], d: Infinity });
+                    setSelectedStation(nearest.s);
+                }
+                setLocating(false);
+                setLocDone(true);
+            },
+            (err) => {
+                // Fallback to Barcelona default for demo
+                console.warn('Geolocation error, using Barcelona default:', err.message);
+                setLocError(`GPS unavailable: ${err.message}. Using default location.`);
+                const coords = { lat: 41.387, lon: 2.17 };
+                setUserCoords(coords);
+                // Auto-select nearest available station with fallback coords
+                const available = stations.filter(s => s.status !== 'offline');
+                if (available.length) {
+                    const nearest = available.reduce((best, s) => {
+                        const d = distanceKm(coords.lat, coords.lon, s.lat, s.lng);
+                        return d < best.d ? { s, d } : best;
+                    }, { s: available[0], d: Infinity });
+                    setSelectedStation(nearest.s);
+                }
+                setLocating(false);
+                setLocDone(true);
+            },
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+        );
     };
 
     const handleStart = async () => {
         if (!selectedStation) return;
         setCharging(true);
-        await startChargingSession(
+        const result = await startChargingSession(
             selectedStation.id,
             user?.phone,
-            41.387,
-            2.17,
+            userCoords.lat,
+            userCoords.lon,
             user?.id
         );
+        setSessionResult(result);
         setCharging(false);
         setDone(true);
     };
 
+    const isApproved = sessionResult?.status === 'approved';
+
     if (done) return (
         <div className="page-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '1.5rem' }}>
-            <div className="success-ring">
-                <CheckCircle size={48} color="var(--color-green)" />
+            <div className="success-ring" style={!isApproved ? { borderColor: 'var(--color-red, #ef4444)' } : undefined}>
+                {isApproved
+                    ? <CheckCircle size={48} color="var(--color-green)" />
+                    : <AlertTriangle size={48} color="var(--color-red, #ef4444)" />}
             </div>
             <div style={{ textAlign: 'center' }}>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', marginBottom: 8 }}>Charging Started!</h2>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', marginBottom: 8 }}>
+                    {isApproved ? 'Charging Started!' : 'Session Rejected'}
+                </h2>
                 <p style={{ color: 'var(--color-text-muted)' }}>
-                    Session active at <strong>{selectedStation?.name}</strong>.<br />
-                    Estimated time: <strong>{minutes} minutes</strong>
+                    {isApproved ? (
+                        <>Session active at <strong>{selectedStation?.name}</strong>.<br />
+                        Estimated time: <strong>{minutes} minutes</strong></>
+                    ) : (
+                        <>
+                            {sessionResult?.decision === 'REJECT_FRAUD' && <strong style={{ color: 'var(--color-red, #ef4444)' }}>Fraud risk detected.</strong>}
+                            {sessionResult?.decision === 'REJECT_LOCATION' && <strong style={{ color: 'var(--color-red, #ef4444)' }}>Location verification failed.</strong>}
+                            {sessionResult?.decision === 'REJECT_IDENTITY' && <strong style={{ color: 'var(--color-red, #ef4444)' }}>Identity verification failed.</strong>}
+                            {!['REJECT_FRAUD', 'REJECT_LOCATION', 'REJECT_IDENTITY'].includes(sessionResult?.decision) && (
+                                <strong style={{ color: 'var(--color-red, #ef4444)' }}>Verification failed.</strong>
+                            )}
+                            <br />
+                            <span style={{ fontSize: '0.9rem' }}>Please contact support or try again later.</span>
+                        </>
+                    )}
                 </p>
             </div>
-            <button className="btn btn-primary" onClick={() => { setDone(false); setStep(0); setLocDone(false); }}>
-                Start Another Session
+            <button className="btn btn-primary" onClick={() => { setDone(false); setSessionResult(null); setStep(0); setLocDone(false); }}>
+                {isApproved ? 'Start Another Session' : 'Try Again'}
             </button>
         </div>
     );
@@ -129,18 +204,28 @@ export default function Reservation() {
                         We'll use your GPS to verify you're near a registered station.
                     </p>
                     {!locDone ? (
-                        <button className="btn btn-primary locate-btn" onClick={handleLocate} disabled={locating}>
-                            {locating
-                                ? <><span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Locating…</>
-                                : <><MapPin size={16} /> Detect My Location</>}
-                        </button>
+                        <>
+                            <button className="btn btn-primary locate-btn" onClick={handleLocate} disabled={locating}>
+                                {locating
+                                    ? <><span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Locating…</>
+                                    : <><MapPin size={16} /> Detect My Location</>}
+                            </button>
+                            {locError && !locDone && (
+                                <div style={{ color: 'var(--color-yellow)', fontSize: '0.8rem', marginTop: 8 }}>
+                                    <AlertTriangle size={13} style={{ verticalAlign: 'middle' }} /> {locError}
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="loc-result">
                             <CheckCircle size={20} color="var(--color-green)" />
                             <div>
                                 <div style={{ fontWeight: 600 }}>Location Verified ✓</div>
-                                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>41.3870° N, 2.1700° E — Barcelona, ES</div>
-                                <div style={{ fontSize: '0.78rem', color: 'var(--color-green)', marginTop: 4 }}>3 stations within 2km</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{userCoords.lat.toFixed(4)}° N, {userCoords.lon.toFixed(4)}° E — Barcelona, ES</div>
+                                {locError && <div style={{ fontSize: '0.75rem', color: 'var(--color-yellow)', marginTop: 2 }}>{locError}</div>}
+                                <div style={{ fontSize: '0.78rem', color: 'var(--color-green)', marginTop: 4 }}>
+                                    {stations.filter(s => s.status !== 'offline' && distanceKm(userCoords.lat, userCoords.lon, s.lat, s.lng) <= 2).length} stations within 2km
+                                </div>
                             </div>
                         </div>
                     )}
@@ -148,14 +233,18 @@ export default function Reservation() {
                         <div style={{ marginTop: '1.25rem' }}>
                             <label className="label">Select Station</label>
                             <div className="station-select-list">
-                                {stations.filter(s => s.status !== 'offline').slice(0, 4).map(s => (
+                                {stations
+                                    .filter(s => s.status !== 'offline')
+                                    .map(s => ({ ...s, _dist: distanceKm(userCoords.lat, userCoords.lon, s.lat, s.lng) }))
+                                    .sort((a, b) => a._dist - b._dist)
+                                    .map(s => (
                                     <div key={s.id}
                                         className={`station-option ${selectedStation?.id === s.id ? 'selected' : ''}`}
                                         onClick={() => setSelectedStation(s)}>
                                         <div className={`sopt-dot ${s.status}`} />
                                         <div className="sopt-info">
                                             <div className="sopt-name">{s.name}</div>
-                                            <div className="sopt-sub">{s.power}kW · {s.connectors} ports</div>
+                                            <div className="sopt-sub">{s.power}kW · {s.connectors} ports · {s._dist < 1 ? `${(s._dist * 1000).toFixed(0)}m` : `${s._dist.toFixed(1)}km`}</div>
                                         </div>
                                         {selectedStation?.id === s.id && <CheckCircle size={16} color="var(--color-primary)" />}
                                     </div>
