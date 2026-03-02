@@ -9,6 +9,17 @@ import './Reservation.css';
 
 const STEPS = ['Identity', 'Location', 'Demand', 'Confirm'];
 
+/** Haversine distance in km between two lat/lon points */
+function distanceKm(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 export default function Reservation() {
     const { user } = useAuth();
     const [step, setStep] = useState(0);
@@ -49,7 +60,17 @@ export default function Reservation() {
         }
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                setUserCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+                const coords = { lat: pos.coords.latitude, lon: pos.coords.longitude };
+                setUserCoords(coords);
+                // Auto-select nearest available station
+                const available = stations.filter(s => s.status !== 'offline');
+                if (available.length) {
+                    const nearest = available.reduce((best, s) => {
+                        const d = distanceKm(coords.lat, coords.lon, s.lat, s.lng);
+                        return d < best.d ? { s, d } : best;
+                    }, { s: available[0], d: Infinity });
+                    setSelectedStation(nearest.s);
+                }
                 setLocating(false);
                 setLocDone(true);
             },
@@ -57,7 +78,17 @@ export default function Reservation() {
                 // Fallback to Barcelona default for demo
                 console.warn('Geolocation error, using Barcelona default:', err.message);
                 setLocError(`GPS unavailable: ${err.message}. Using default location.`);
-                setUserCoords({ lat: 41.387, lon: 2.17 });
+                const coords = { lat: 41.387, lon: 2.17 };
+                setUserCoords(coords);
+                // Auto-select nearest available station with fallback coords
+                const available = stations.filter(s => s.status !== 'offline');
+                if (available.length) {
+                    const nearest = available.reduce((best, s) => {
+                        const d = distanceKm(coords.lat, coords.lon, s.lat, s.lng);
+                        return d < best.d ? { s, d } : best;
+                    }, { s: available[0], d: Infinity });
+                    setSelectedStation(nearest.s);
+                }
                 setLocating(false);
                 setLocDone(true);
             },
@@ -192,7 +223,9 @@ export default function Reservation() {
                                 <div style={{ fontWeight: 600 }}>Location Verified ✓</div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{userCoords.lat.toFixed(4)}° N, {userCoords.lon.toFixed(4)}° E — Barcelona, ES</div>
                                 {locError && <div style={{ fontSize: '0.75rem', color: 'var(--color-yellow)', marginTop: 2 }}>{locError}</div>}
-                                <div style={{ fontSize: '0.78rem', color: 'var(--color-green)', marginTop: 4 }}>3 stations within 2km</div>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--color-green)', marginTop: 4 }}>
+                                    {stations.filter(s => s.status !== 'offline' && distanceKm(userCoords.lat, userCoords.lon, s.lat, s.lng) <= 2).length} stations within 2km
+                                </div>
                             </div>
                         </div>
                     )}
@@ -200,14 +233,18 @@ export default function Reservation() {
                         <div style={{ marginTop: '1.25rem' }}>
                             <label className="label">Select Station</label>
                             <div className="station-select-list">
-                                {stations.filter(s => s.status !== 'offline').slice(0, 4).map(s => (
+                                {stations
+                                    .filter(s => s.status !== 'offline')
+                                    .map(s => ({ ...s, _dist: distanceKm(userCoords.lat, userCoords.lon, s.lat, s.lng) }))
+                                    .sort((a, b) => a._dist - b._dist)
+                                    .map(s => (
                                     <div key={s.id}
                                         className={`station-option ${selectedStation?.id === s.id ? 'selected' : ''}`}
                                         onClick={() => setSelectedStation(s)}>
                                         <div className={`sopt-dot ${s.status}`} />
                                         <div className="sopt-info">
                                             <div className="sopt-name">{s.name}</div>
-                                            <div className="sopt-sub">{s.power}kW · {s.connectors} ports</div>
+                                            <div className="sopt-sub">{s.power}kW · {s.connectors} ports · {s._dist < 1 ? `${(s._dist * 1000).toFixed(0)}m` : `${s._dist.toFixed(1)}km`}</div>
                                         </div>
                                         {selectedStation?.id === s.id && <CheckCircle size={16} color="var(--color-primary)" />}
                                     </div>
