@@ -1,11 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { fetchSessions } from '../../services/api';
+import { fetchSessions, fetchStations, stopChargingSession } from '../../services/api';
 import {
     BatteryCharging, MapPin, Shield, Clock, Zap, TrendingUp,
-    AlertTriangle, CheckCircle, ChevronRight, Activity
+    AlertTriangle, CheckCircle, ChevronRight, Activity, Square
 } from 'lucide-react';
 import './Dashboard.css';
+
+// EV battery simulation constants
+const BATTERY_CAPACITY_KWH = 82;
+const BATTERY_START_PCT = 22;
+const TARGET_BATTERY_PCT = 80;
+const PRICE_PER_KWH = 0.40;
+const CHARGE_EFFICIENCY = 0.9;
 
 function RingProgress({ value, max, color, size = 120 }) {
     const r = (size - 16) / 2;
@@ -45,15 +52,43 @@ export default function CustomerDashboard() {
     const [elapsed, setElapsed] = useState(0);
     const [session, setSession] = useState(null);
     const [sessions, setSessions] = useState([]);
+    const [chargerPower, setChargerPower] = useState(100); // kW, default
+    const [stopping, setStopping] = useState(false);
 
-    useEffect(() => {
-        if (user?.id) {
-            fetchSessions(user.id).then((data) => {
-                setSessions(data);
-                setSession(data[0] || null);
-            });
+    const loadSessions = async () => {
+        if (!user?.id) return;
+        const data = await fetchSessions(user.id);
+        setSessions(data);
+        const active = data.find(s => s.status === 'approved') || data[0] || null;
+        setSession(active);
+        if (active?.stationId) {
+            const stations = await fetchStations();
+            const matched = stations.find(st => st.id === active.stationId);
+            if (matched) setChargerPower(matched.power);
         }
-    }, [user?.id]);
+    };
+
+    useEffect(() => { loadSessions(); }, [user?.id]);
+
+    const isLive = session?.status === 'approved';
+
+    // Compute live session fields from elapsed time
+    const kwhSoFar = isLive ? Math.min(
+        ((elapsed / 60) * chargerPower * CHARGE_EFFICIENCY),
+        ((TARGET_BATTERY_PCT - BATTERY_START_PCT) / 100) * BATTERY_CAPACITY_KWH
+    ) : (session?.kwhConsumed || 0);
+
+    const costSoFar = isLive
+        ? (kwhSoFar * PRICE_PER_KWH)
+        : (session?.cost || 0);
+
+    const batteryNow = isLive
+        ? Math.min(BATTERY_START_PCT + Math.round((kwhSoFar / BATTERY_CAPACITY_KWH) * 100), TARGET_BATTERY_PCT)
+        : 0;
+
+    const totalKwhNeeded = ((TARGET_BATTERY_PCT - BATTERY_START_PCT) / 100) * BATTERY_CAPACITY_KWH;
+    const totalMinutesNeeded = chargerPower > 0 ? (totalKwhNeeded / (chargerPower * CHARGE_EFFICIENCY)) * 60 : 0;
+    const estimatedMinutesLeft = isLive ? Math.max(0, Math.round(totalMinutesNeeded - elapsed)) : 0;
 
     const recentSessions = sessions.slice(0, 3);
 
@@ -67,6 +102,17 @@ export default function CustomerDashboard() {
     }, [session?.startTime]);
 
     const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+
+    const handleStop = async () => {
+        if (!session?.id || stopping) return;
+        setStopping(true);
+        try {
+            await stopChargingSession(session.id);
+            await loadSessions();
+        } finally {
+            setStopping(false);
+        }
+    };
 
     return (
         <div className="page-content animate-fade-up">
@@ -91,7 +137,7 @@ export default function CustomerDashboard() {
                         <p className="session-sub"><MapPin size={13} /> {session?.stationId ? `Station ${session.stationId.toUpperCase()}` : 'Start a charge to see details'}</p>
                     </div>
                     <div className="session-ring">
-                        <RingProgress value={session?.batteryNow || 0} max={100} color="var(--color-primary)" size={110} />
+                        <RingProgress value={isLive ? batteryNow : 0} max={100} color="var(--color-primary)" size={110} />
                         <span className="ring-label">Battery</span>
                     </div>
                 </div>
@@ -107,21 +153,21 @@ export default function CustomerDashboard() {
                     <div className="sstat">
                         <Zap size={16} className="sstat-icon" />
                         <div>
-                            <div className="sstat-val">{session?.kwhSoFar ?? '--'} kWh</div>
+                            <div className="sstat-val">{isLive ? kwhSoFar.toFixed(1) : '--'} kWh</div>
                             <div className="sstat-lbl">Charged</div>
                         </div>
                     </div>
                     <div className="sstat">
                         <TrendingUp size={16} className="sstat-icon" />
                         <div>
-                            <div className="sstat-val">{session ? `$${session.costSoFar}` : '--'}</div>
+                            <div className="sstat-val">{isLive ? `$${costSoFar.toFixed(2)}` : '--'}</div>
                             <div className="sstat-lbl">Cost so far</div>
                         </div>
                     </div>
                     <div className="sstat">
                         <BatteryCharging size={16} className="sstat-icon" />
                         <div>
-                            <div className="sstat-val">{session ? `${session.estimatedMinutesLeft}m` : '--'}</div>
+                            <div className="sstat-val">{isLive ? `${estimatedMinutesLeft}m` : '--'}</div>
                             <div className="sstat-lbl">ETA</div>
                         </div>
                     </div>
@@ -130,20 +176,25 @@ export default function CustomerDashboard() {
                 {/* Battery bar */}
                 <div className="battery-bar-wrap">
                     <div className="battery-bar-track">
-                        <div className="battery-bar-fill" style={{ width: `${session?.batteryNow || 0}%` }}>
-                            {(session?.targetBattery || 0) > 0 && (
-                                <div className="battery-bar-target" style={{ left: `${session.targetBattery}%` }}>
-                                    <div className="target-line" />
-                                    <span className="target-label">{session.targetBattery}% target</span>
-                                </div>
-                            )}
+                        <div className="battery-bar-fill" style={{ width: `${isLive ? batteryNow : 0}%` }}>
+                            <div className="battery-bar-target" style={{ left: `${TARGET_BATTERY_PCT}%` }}>
+                                <div className="target-line" />
+                                <span className="target-label">{TARGET_BATTERY_PCT}% target</span>
+                            </div>
                         </div>
                     </div>
                     <div className="battery-labels">
-                        <span>{session?.batteryStart || 0}% start</span>
-                        <span style={{ color: 'var(--color-primary)' }}>{session?.batteryNow || 0}% now</span>
+                        <span>{BATTERY_START_PCT}% start</span>
+                        <span style={{ color: 'var(--color-primary)' }}>{isLive ? batteryNow : 0}% now</span>
                     </div>
                 </div>
+
+                {isLive && (
+                    <button className="stop-charge-btn" onClick={handleStop} disabled={stopping}>
+                        <Square size={16} />
+                        {stopping ? 'Stopping...' : 'Stop Charging'}
+                    </button>
+                )}
             </div>
 
             {/* Quick Stats */}

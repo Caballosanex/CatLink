@@ -6,6 +6,7 @@ import AdminDashboard from '../pages/admin/AdminDashboard';
 import StationManagement from '../pages/admin/StationManagement';
 import OfflineMonitoring from '../pages/admin/OfflineMonitoring';
 import UserManagement from '../pages/admin/UserManagement';
+import AgentPanel from '../components/AgentPanel';
 import './AdminLayout.css';
 
 const NAV_ITEMS = [
@@ -84,6 +85,9 @@ export default function AdminLayout() {
                     </Routes>
                 </main>
             </div>
+
+            {/* AI Agent Panel — floating overlay */}
+            <AgentPanel />
         </div>
     );
 }

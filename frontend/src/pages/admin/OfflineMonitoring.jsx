@@ -22,7 +22,7 @@ function IncidentModal({ station, onClose }) {
 
     return (
         <div className="modal-overlay" onClick={onClose}>
-            <div className="modal-card glass" onClick={e => e.stopPropagation()}>
+            <div className="modal-card glass report_fix" onClick={e => e.stopPropagation()}>
                 <div className="modal-header">
                     <h3>Report Incident — {station.name}</h3>
                     <button onClick={onClose}><X size={18} /></button>

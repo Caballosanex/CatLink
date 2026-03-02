@@ -50,7 +50,10 @@ async def start_session(
             user_lat=user_lat,
             user_lon=user_lon,
         )
-    except Exception:
+    except Exception as e:
+        import traceback
+        print(f"[AGENT ERROR] {e}")
+        traceback.print_exc()
         result = {
             "decision": AgentDecision.APPROVE.value,
             "reason": "Agent unavailable, auto-approved for demo",
