@@ -80,6 +80,21 @@ class NokiaService:
             )
             
             # result.result_type can be "TRUE", "FALSE", "PARTIAL", "UNKNOWN"
+            # UNKNOWN means the network can't determine location (e.g. phone not on sandbox network)
+            # In that case, fall back to GPS distance check
+            if result.result_type == "UNKNOWN":
+                distance = self._calculate_distance(user_lat, user_lon, target_lat, target_lon)
+                verified = distance <= radius_m
+                return {
+                    "verified": verified,
+                    "result_type": result.result_type,
+                    "distance_m": round(distance, 2),
+                    "radius_m": radius_m,
+                    "note": "Network returned UNKNOWN, used GPS fallback",
+                    "mock": False,
+                    "api": "location_verification"
+                }
+            
             verified = result.result_type == "TRUE"
             
             return {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import { fetchStations } from '../../services/api';
 import { Search, Wifi, WifiOff, Zap, MapPin, ChevronDown, ChevronUp, Activity } from 'lucide-react';
 
@@ -71,8 +71,8 @@ export default function StationManagement() {
                                 const st = STATUS[s.status];
                                 const isExp = expanded === s.id;
                                 return (
-                                    <>
-                                        <tr key={s.id} style={{ cursor: 'pointer' }} onClick={() => setExpanded(isExp ? null : s.id)}>
+                                    <Fragment key={s.id}>
+                                        <tr style={{ cursor: 'pointer' }} onClick={() => setExpanded(isExp ? null : s.id)}>
                                             <td>
                                                 <div style={{ fontWeight: 600 }}>{s.name}</div>
                                                 <div style={{ fontSize: '0.72rem', color: 'var(--color-text-muted)' }}>{s.id.toUpperCase()}</div>
@@ -102,7 +102,7 @@ export default function StationManagement() {
                                                 </td>
                                             </tr>
                                         )}
-                                    </>
+                                    </Fragment>
                                 );
                             })}
                         </tbody>

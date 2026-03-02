@@ -1,0 +1,321 @@
+/* ─── Agent Panel ─────────────────────────────────────────────── */
+
+/* FAB button when panel is closed */
+.agent-fab {
+  position: fixed;
+  bottom: 88px;
+  right: 20px;
+  z-index: 200;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--color-accent), var(--color-primary));
+  color: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(123, 92, 255, 0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  border: none;
+}
+
+.agent-fab:hover {
+  transform: scale(1.1);
+  box-shadow: 0 4px 30px rgba(123, 92, 255, 0.6);
+}
+
+.fab-badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 18px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--color-red);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 4px;
+}
+
+/* Panel container */
+.agent-panel {
+  position: fixed;
+  bottom: 88px;
+  right: 16px;
+  z-index: 200;
+  width: 380px;
+  max-height: 480px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg), 0 0 40px rgba(123, 92, 255, 0.1);
+  animation: fadeInUp 0.25s ease both;
+}
+
+.agent-panel.minimized {
+  max-height: none;
+}
+
+/* Header */
+.agent-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.agent-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.ws-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 100px;
+  font-family: var(--font-sans);
+}
+
+.ws-status.online {
+  background: var(--color-green-dim);
+  color: var(--color-green);
+}
+
+.ws-status.offline {
+  background: var(--color-red-dim);
+  color: var(--color-red);
+}
+
+.agent-panel-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--color-text-muted);
+}
+
+.panel-action-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-dim);
+  transition: color 0.2s, background 0.2s;
+}
+
+.panel-action-btn:hover {
+  color: var(--color-text);
+  background: var(--color-surface-2);
+}
+
+/* Body / scroll area */
+.agent-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.75rem;
+  max-height: 400px;
+}
+
+/* Empty state */
+.agent-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  color: var(--color-text-dim);
+  font-size: 0.82rem;
+}
+
+.agent-empty-icon {
+  color: var(--color-accent);
+  opacity: 0.4;
+  margin-bottom: 0.25rem;
+}
+
+.agent-empty-sub {
+  font-size: 0.72rem;
+  color: var(--color-text-dim);
+}
+
+/* ─── Log entries ──────────────────────────────────────────────── */
+.agent-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.agent-entry {
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.55rem 0.65rem;
+  border-radius: var(--radius-md);
+  background: var(--color-surface-2);
+  border: 1px solid var(--color-border);
+  animation: fadeInUp 0.2s ease both;
+}
+
+.entry-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.entry-dot.start {
+  background: var(--color-accent);
+  box-shadow: 0 0 8px var(--color-accent);
+}
+
+.entry-dot.tool {
+  background: transparent;
+  border: 2px solid var(--color-primary);
+}
+
+.entry-dot.approve {
+  background: var(--color-green);
+  box-shadow: 0 0 10px var(--color-green);
+}
+
+.entry-dot.reject {
+  background: var(--color-red);
+  box-shadow: 0 0 10px var(--color-red);
+}
+
+.entry-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.entry-header {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 2px;
+}
+
+.entry-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  flex: 1;
+}
+
+.entry-time {
+  font-size: 0.65rem;
+  color: var(--color-text-dim);
+  font-variant-numeric: tabular-nums;
+}
+
+.entry-msg {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.entry-input {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 4px;
+}
+
+.entry-param {
+  font-size: 0.7rem;
+  color: var(--color-text-dim);
+  background: var(--color-surface-3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.entry-param strong {
+  color: var(--color-text-muted);
+}
+
+.entry-output-details {
+  margin-top: 4px;
+}
+
+.entry-output-details summary {
+  font-size: 0.7rem;
+  color: var(--color-text-dim);
+  cursor: pointer;
+  user-select: none;
+}
+
+.entry-output-details summary:hover {
+  color: var(--color-primary);
+}
+
+.entry-output {
+  font-size: 0.68rem;
+  color: var(--color-text-muted);
+  background: var(--color-surface-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.4rem 0.5rem;
+  margin-top: 4px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  max-height: 120px;
+  overflow-y: auto;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+}
+
+/* Decision styling */
+.agent-entry-decision.decision-approve {
+  border-color: rgba(0, 230, 118, 0.3);
+  background: rgba(0, 230, 118, 0.05);
+}
+
+.agent-entry-decision.decision-reject {
+  border-color: rgba(255, 61, 113, 0.3);
+  background: rgba(255, 61, 113, 0.05);
+}
+
+/* ─── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 440px) {
+  .agent-panel {
+    left: 8px;
+    right: 8px;
+    width: auto;
+    bottom: 78px;
+    max-height: 400px;
+  }
+
+  .agent-fab {
+    bottom: 78px;
+    right: 12px;
+  }
+}
+
+/* Admin layout positioning — panel sits in the main area */
+.admin-shell .agent-panel {
+  bottom: 20px;
+}
+
+.admin-shell .agent-fab {
+  bottom: 20px;
+}

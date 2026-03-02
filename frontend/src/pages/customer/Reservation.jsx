@@ -19,6 +19,9 @@ export default function Reservation() {
     const [demand, setDemand] = useState(60);
     const [charging, setCharging] = useState(false);
     const [done, setDone] = useState(false);
+    const [sessionResult, setSessionResult] = useState(null);
+    const [userCoords, setUserCoords] = useState({ lat: 41.387, lon: 2.17 });
+    const [locError, setLocError] = useState(null);
 
     useEffect(() => {
         fetchStations().then((data) => {
@@ -38,37 +41,78 @@ export default function Reservation() {
 
     const handleLocate = () => {
         setLocating(true);
-        setTimeout(() => { setLocating(false); setLocDone(true); }, 2000);
+        setLocError(null);
+        if (!navigator.geolocation) {
+            setLocError('Geolocation not supported by your browser');
+            setLocating(false);
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                setUserCoords({ lat: pos.coords.latitude, lon: pos.coords.longitude });
+                setLocating(false);
+                setLocDone(true);
+            },
+            (err) => {
+                // Fallback to Barcelona default for demo
+                console.warn('Geolocation error, using Barcelona default:', err.message);
+                setLocError(`GPS unavailable: ${err.message}. Using default location.`);
+                setUserCoords({ lat: 41.387, lon: 2.17 });
+                setLocating(false);
+                setLocDone(true);
+            },
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+        );
     };
 
     const handleStart = async () => {
         if (!selectedStation) return;
         setCharging(true);
-        await startChargingSession(
+        const result = await startChargingSession(
             selectedStation.id,
             user?.phone,
-            41.387,
-            2.17,
+            userCoords.lat,
+            userCoords.lon,
             user?.id
         );
+        setSessionResult(result);
         setCharging(false);
         setDone(true);
     };
 
+    const isApproved = sessionResult?.status === 'approved';
+
     if (done) return (
         <div className="page-content" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '1.5rem' }}>
-            <div className="success-ring">
-                <CheckCircle size={48} color="var(--color-green)" />
+            <div className="success-ring" style={!isApproved ? { borderColor: 'var(--color-red, #ef4444)' } : undefined}>
+                {isApproved
+                    ? <CheckCircle size={48} color="var(--color-green)" />
+                    : <AlertTriangle size={48} color="var(--color-red, #ef4444)" />}
             </div>
             <div style={{ textAlign: 'center' }}>
-                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', marginBottom: 8 }}>Charging Started!</h2>
+                <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', marginBottom: 8 }}>
+                    {isApproved ? 'Charging Started!' : 'Session Rejected'}
+                </h2>
                 <p style={{ color: 'var(--color-text-muted)' }}>
-                    Session active at <strong>{selectedStation?.name}</strong>.<br />
-                    Estimated time: <strong>{minutes} minutes</strong>
+                    {isApproved ? (
+                        <>Session active at <strong>{selectedStation?.name}</strong>.<br />
+                        Estimated time: <strong>{minutes} minutes</strong></>
+                    ) : (
+                        <>
+                            {sessionResult?.decision === 'REJECT_FRAUD' && <strong style={{ color: 'var(--color-red, #ef4444)' }}>Fraud risk detected.</strong>}
+                            {sessionResult?.decision === 'REJECT_LOCATION' && <strong style={{ color: 'var(--color-red, #ef4444)' }}>Location verification failed.</strong>}
+                            {sessionResult?.decision === 'REJECT_IDENTITY' && <strong style={{ color: 'var(--color-red, #ef4444)' }}>Identity verification failed.</strong>}
+                            {!['REJECT_FRAUD', 'REJECT_LOCATION', 'REJECT_IDENTITY'].includes(sessionResult?.decision) && (
+                                <strong style={{ color: 'var(--color-red, #ef4444)' }}>Verification failed.</strong>
+                            )}
+                            <br />
+                            <span style={{ fontSize: '0.9rem' }}>Please contact support or try again later.</span>
+                        </>
+                    )}
                 </p>
             </div>
-            <button className="btn btn-primary" onClick={() => { setDone(false); setStep(0); setLocDone(false); }}>
-                Start Another Session
+            <button className="btn btn-primary" onClick={() => { setDone(false); setSessionResult(null); setStep(0); setLocDone(false); }}>
+                {isApproved ? 'Start Another Session' : 'Try Again'}
             </button>
         </div>
     );
@@ -129,17 +173,25 @@ export default function Reservation() {
                         We'll use your GPS to verify you're near a registered station.
                     </p>
                     {!locDone ? (
-                        <button className="btn btn-primary locate-btn" onClick={handleLocate} disabled={locating}>
-                            {locating
-                                ? <><span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Locating…</>
-                                : <><MapPin size={16} /> Detect My Location</>}
-                        </button>
+                        <>
+                            <button className="btn btn-primary locate-btn" onClick={handleLocate} disabled={locating}>
+                                {locating
+                                    ? <><span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Locating…</>
+                                    : <><MapPin size={16} /> Detect My Location</>}
+                            </button>
+                            {locError && !locDone && (
+                                <div style={{ color: 'var(--color-yellow)', fontSize: '0.8rem', marginTop: 8 }}>
+                                    <AlertTriangle size={13} style={{ verticalAlign: 'middle' }} /> {locError}
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="loc-result">
                             <CheckCircle size={20} color="var(--color-green)" />
                             <div>
                                 <div style={{ fontWeight: 600 }}>Location Verified ✓</div>
-                                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>41.3870° N, 2.1700° E — Barcelona, ES</div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>{userCoords.lat.toFixed(4)}° N, {userCoords.lon.toFixed(4)}° E — Barcelona, ES</div>
+                                {locError && <div style={{ fontSize: '0.75rem', color: 'var(--color-yellow)', marginTop: 2 }}>{locError}</div>}
                                 <div style={{ fontSize: '0.78rem', color: 'var(--color-green)', marginTop: 4 }}>3 stations within 2km</div>
                             </div>
                         </div>
