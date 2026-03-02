@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react';
-import { fetchStations } from '../../services/api';
+import { fetchStations, refreshOccupancy } from '../../services/api';
 import { Search, Wifi, WifiOff, Zap, MapPin, ChevronDown, ChevronUp, Activity } from 'lucide-react';
 
 function timeSince(iso) {
@@ -21,7 +21,7 @@ export default function StationManagement() {
     const [stations, setStations] = useState([]);
 
     useEffect(() => {
-        fetchStations().then(setStations);
+        refreshOccupancy().then(() => fetchStations()).then(setStations);
     }, []);
 
     const filtered = stations.filter(s =>

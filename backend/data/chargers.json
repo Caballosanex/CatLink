@@ -9,7 +9,7 @@
     "connectors": ["CCS2", "CHAdeMO"],
     "status": "available",
     "zone": "centro",
-    "iot_phone": "+34900000001"
+    "iot_phone": "+3672100001"
   },
   {
     "id": "CHG-002",
@@ -21,7 +21,7 @@
     "connectors": ["CCS2"],
     "status": "in_use",
     "zone": "centro",
-    "iot_phone": "+34900000002"
+    "iot_phone": "+3672100002"
   },
   {
     "id": "CHG-003",
@@ -33,7 +33,7 @@
     "connectors": ["CCS2", "Type2"],
     "status": "offline",
     "zone": "centro",
-    "iot_phone": "+34900000003"
+    "iot_phone": "+3672100003"
   },
   {
     "id": "CHG-004",
@@ -45,7 +45,7 @@
     "connectors": ["CCS2"],
     "status": "available",
     "zone": "norte",
-    "iot_phone": "+34900000004"
+    "iot_phone": "+3670100004"
   },
   {
     "id": "CHG-005",
@@ -57,7 +57,7 @@
     "connectors": ["CCS2", "CHAdeMO"],
     "status": "available",
     "zone": "sur",
-    "iot_phone": "+34900000005"
+    "iot_phone": "+3670100005"
   },
   {
     "id": "CHG-006",
@@ -69,7 +69,7 @@
     "connectors": ["CCS2"],
     "status": "available",
     "zone": "centro",
-    "iot_phone": "+34900000006"
+    "iot_phone": "+3637100006"
   },
   {
     "id": "CHG-007",
@@ -81,6 +81,6 @@
     "connectors": ["CCS2", "CHAdeMO"],
     "status": "available",
     "zone": "sur",
-    "iot_phone": "+34900000007"
+    "iot_phone": "+3637100007"
   }
 ]

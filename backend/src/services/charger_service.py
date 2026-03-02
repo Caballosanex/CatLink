@@ -38,3 +38,23 @@ async def update_charger_status(charger_id: str, status: str, db: AsyncSession) 
     await db.commit()
     await db.refresh(charger)
     return charger
+
+
+async def refresh_all_occupancies(db: AsyncSession) -> List[dict]:
+    """Refresh AI occupancy for all non-offline chargers using Nokia Congestion API."""
+    chargers = await get_all_chargers(db)
+    results = []
+    for charger in chargers:
+        if charger.status == "offline":
+            continue
+        congestion = await nokia_service.get_congestion(charger.iot_phone)
+        charger.ai_occupancy = congestion["occupancy_pct"]
+        results.append({
+            "id": charger.id,
+            "name": charger.name,
+            "congestion_level": congestion["congestion_level"],
+            "occupancy_pct": congestion["occupancy_pct"],
+            "mock": congestion.get("mock", True),
+        })
+    await db.commit()
+    return results
