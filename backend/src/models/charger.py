@@ -1,3 +1,4 @@
+from datetime import datetime
 from pydantic import BaseModel
 from enum import Enum
 from typing import List, Optional
@@ -21,6 +22,11 @@ class Charger(BaseModel):
     status: ChargerStatus
     zone: str
     iot_phone: str
+    last_heartbeat: Optional[datetime] = None
+    ai_occupancy: Optional[int] = None
+
+    class Config:
+        from_attributes = True
 
 
 class ChargerResponse(Charger):

@@ -1,13 +1,7 @@
-import { useState } from 'react';
-import { Search, Shield, ShieldOff, Lock, AlertTriangle, CheckCircle, User, ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Search, Shield, ShieldOff, Lock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { fetchUsers, updateUser } from '../../services/api';
 
-const INITIAL_USERS = [
-    { id: 'usr_001', name: 'Alex Rivera', email: 'customer@ev.com', avatar: 'AR', verificationStatus: 'verified', riskLevel: 'low', isBlocked: false, isSuspended: false, joinDate: '2024-01-15', vehicle: 'Tesla Model 3', sessions: 5 },
-    { id: 'usr_002', name: 'Jordan Kim', email: 'jordan@ev.com', avatar: 'JK', verificationStatus: 'pending', riskLevel: 'medium', isBlocked: false, isSuspended: false, joinDate: '2024-03-22', vehicle: 'Rivian R1T', sessions: 3 },
-    { id: 'usr_003', name: 'Morgan Chen', email: 'morgan@ev.com', avatar: 'MC', verificationStatus: 'verified', riskLevel: 'high', isBlocked: false, isSuspended: true, joinDate: '2023-11-08', vehicle: 'Hyundai Ioniq 6', sessions: 8 },
-    { id: 'usr_004', name: 'Riley Park', email: 'riley@ev.com', avatar: 'RP', verificationStatus: 'verified', riskLevel: 'low', isBlocked: false, isSuspended: false, joinDate: '2024-05-10', vehicle: 'Ford Mustang Mach-E', sessions: 2 },
-    { id: 'usr_005', name: 'Casey Brooks', email: 'casey@ev.com', avatar: 'CB', verificationStatus: 'pending', riskLevel: 'medium', isBlocked: true, isSuspended: false, joinDate: '2024-02-28', vehicle: 'Chevy Bolt EUV', sessions: 1 },
-];
 
 const RISK_CFG = {
     low: { badge: 'badge-green', icon: <CheckCircle size={12} />, label: 'Low' },
@@ -20,7 +14,7 @@ const VER_CFG = {
 };
 
 export default function UserManagement() {
-    const [users, setUsers] = useState(INITIAL_USERS);
+    const [users, setUsers] = useState([]);
     const [search, setSearch] = useState('');
     const [riskFilter, setRiskFilter] = useState('all');
     const [confirm, setConfirm] = useState(null); // { userId, action }
@@ -32,23 +26,22 @@ export default function UserManagement() {
         return true;
     });
 
-    const applyAction = () => {
+    useEffect(() => {
+        fetchUsers().then(setUsers);
+    }, []);
+
+    const applyAction = async () => {
         if (!confirm) return;
-        setUsers(prev => prev.map(u => {
-            if (u.id !== confirm.userId) return u;
-            if (confirm.action === 'block') return { ...u, isBlocked: !u.isBlocked };
-            if (confirm.action === 'suspend') return { ...u, isSuspended: !u.isSuspended };
-            return u;
-        }));
-        // persist to localStorage
-        const stored = JSON.parse(localStorage.getItem('voltgrid_users') || '[]');
-        const updated = stored.map(u => {
-            if (u.id !== confirm.userId) return u;
-            if (confirm.action === 'block') return { ...u, isBlocked: !u.isBlocked };
-            if (confirm.action === 'suspend') return { ...u, isSuspended: !u.isSuspended };
-            return u;
-        });
-        localStorage.setItem('voltgrid_users', JSON.stringify(updated));
+        const target = users.find((u) => u.id === confirm.userId);
+        if (!target) return;
+
+        const updates =
+            confirm.action === 'block'
+                ? { isBlocked: !target.isBlocked }
+                : { isSuspended: !target.isSuspended };
+
+        const updatedUser = await updateUser(confirm.userId, updates);
+        setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
         setConfirm(null);
     };
 
@@ -99,7 +92,7 @@ export default function UserManagement() {
                                         {u.isSuspended && !u.isBlocked && <span className="badge badge-yellow">Suspended</span>}
                                     </div>
                                     <div style={{ fontSize: '0.78rem', color: 'var(--color-text-muted)', marginTop: 2 }}>{u.email}</div>
-                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)', marginTop: 2 }}>{u.vehicle} · {u.sessions} sessions</div>
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--color-text-dim)', marginTop: 2 }}>{u.vehicle}</div>
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                                     <span className={`badge ${rk.badge}`}>{rk.icon} {rk.label} Risk</span>

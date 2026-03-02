@@ -1,29 +1,30 @@
+import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { MOCK_SESSIONS } from '../../data/mockData';
+import { fetchSessions } from '../../services/api';
 import { Zap, Clock, DollarSign, Download, BarChart3, Calendar } from 'lucide-react';
 import './History.css';
 
 function downloadInvoice(session) {
     const text = [
-        '═══════════════════════════════════════',
-        '         VOLTGRID AI — INVOICE         ',
-        '═══════════════════════════════════════',
+        '=======================================',
+        '           CATLINK — INVOICE           ',
+        '=======================================',
         '',
         `Session ID  : ${session.id.toUpperCase()}`,
         `Station     : ${session.stationName}`,
         `Date        : ${new Date(session.startTime).toLocaleDateString('en-US', { dateStyle: 'long' })}`,
         `Start Time  : ${new Date(session.startTime).toLocaleTimeString()}`,
-        `End Time    : ${new Date(session.endTime).toLocaleTimeString()}`,
-        `Duration    : ${session.duration} minutes`,
+        `End Time    : ${session.endTime ? new Date(session.endTime).toLocaleTimeString() : '-'}`,
+        `Duration    : ${session.duration || 0} minutes`,
         '',
-        '──────────────────────────────────────',
-        `Energy Used : ${session.kwhConsumed} kWh`,
-        `Unit Price  : $${session.pricePerKwh}/kWh`,
-        '──────────────────────────────────────',
-        `TOTAL COST  : $${session.cost.toFixed(2)}`,
-        '══════════════════════════════════════',
+        '--------------------------------------',
+        `Energy Used : ${session.kwhConsumed || 0} kWh`,
+        `Unit Price  : $${session.pricePerKwh || 0}/kWh`,
+        '--------------------------------------',
+        `TOTAL COST  : $${(session.cost || 0).toFixed(2)}`,
+        '======================================',
         '',
-        'Powered by VoltGrid AI · 5G Smart Grid',
+        'Powered by CatLink · Nokia Network as Code',
         'Thank you for charging with us!',
     ].join('\n');
 
@@ -31,17 +32,23 @@ function downloadInvoice(session) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `voltgrid-invoice-${session.id}.txt`;
+    a.download = `catlink-invoice-${session.id}.txt`;
     a.click();
     URL.revokeObjectURL(url);
 }
 
 export default function History() {
     const { user } = useAuth();
-    const sessions = MOCK_SESSIONS.filter(s => s.userId === user?.id);
-    const totalKwh = sessions.reduce((a, s) => a + s.kwhConsumed, 0);
-    const totalCost = sessions.reduce((a, s) => a + s.cost, 0);
-    const avgDuration = sessions.length ? Math.round(sessions.reduce((a, s) => a + s.duration, 0) / sessions.length) : 0;
+    const [sessions, setSessions] = useState([]);
+
+    useEffect(() => {
+        if (user?.id) {
+            fetchSessions(user.id).then(setSessions);
+        }
+    }, [user?.id]);
+    const totalKwh = sessions.reduce((a, s) => a + (s.kwhConsumed || 0), 0);
+    const totalCost = sessions.reduce((a, s) => a + (s.cost || 0), 0);
+    const avgDuration = sessions.length ? Math.round(sessions.reduce((a, s) => a + (s.duration || 0), 0) / sessions.length) : 0;
 
     const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 
@@ -89,12 +96,12 @@ export default function History() {
                             <div className="kwh-bar-wrap">
                                 <div
                                     className="kwh-bar-fill"
-                                    style={{ height: `${(s.kwhConsumed / 70) * 100}%` }}
-                                    title={`${s.kwhConsumed} kWh`}
+                                    style={{ height: `${((s.kwhConsumed || 0) / 70) * 100}%` }}
+                                    title={`${s.kwhConsumed || 0} kWh`}
                                 />
                             </div>
                             <div className="kwh-bar-label">{new Date(s.startTime).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</div>
-                            <div className="kwh-bar-val">{s.kwhConsumed}</div>
+                            <div className="kwh-bar-val">{s.kwhConsumed || 0}</div>
                         </div>
                     ))}
                 </div>
@@ -127,13 +134,13 @@ export default function History() {
                                     <td style={{ fontSize: '0.85rem' }}>{fmt(s.startTime)}</td>
                                     <td style={{ fontSize: '0.85rem' }}>{s.duration} min</td>
                                     <td>
-                                        <span className="badge badge-blue">{s.kwhConsumed} kWh</span>
+                                        <span className="badge badge-blue">{s.kwhConsumed || 0} kWh</span>
                                     </td>
                                     <td>
                                         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-primary)' }}>
-                                            ${s.cost.toFixed(2)}
+                                            ${(s.cost || 0).toFixed(2)}
                                         </span>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>${s.pricePerKwh}/kWh</div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>${s.pricePerKwh || 0}/kWh</div>
                                     </td>
                                     <td>
                                         <button className="btn btn-outline btn-sm" onClick={() => downloadInvoice(s)}>

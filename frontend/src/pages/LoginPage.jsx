@@ -15,7 +15,7 @@ export default function LoginPage() {
 
     const fillDemo = (r) => {
         setRole(r);
-        setEmail(r === 'admin' ? 'admin@ev.com' : 'customer@ev.com');
+        setEmail(r === 'admin' ? 'admin@catlink.io' : 'maria@example.com');
         setPassword(r === 'admin' ? 'admin123' : 'password123');
         setError('');
     };
@@ -25,10 +25,10 @@ export default function LoginPage() {
         setError('');
         setLoading(true);
         await new Promise((r) => setTimeout(r, 800));
-        const result = login(email, password);
+        const result = await login(email, password);
         setLoading(false);
         if (!result.success) { setError(result.message); return; }
-        const user = JSON.parse(localStorage.getItem('voltgrid_current_user'));
+        const user = JSON.parse(localStorage.getItem('catlink_current_user'));
         navigate(user.role === 'admin' ? '/admin' : '/customer');
     };
 
@@ -47,7 +47,7 @@ export default function LoginPage() {
                         <Zap size={28} strokeWidth={2.5} />
                     </div>
                     <div>
-                        <h1 className="logo-title">VoltGrid AI</h1>
+                        <h1 className="logo-title">CatLink</h1>
                         <p className="logo-subtitle">EV Charging Management</p>
                     </div>
                 </div>
@@ -84,7 +84,7 @@ export default function LoginPage() {
                                 <input
                                     type="email"
                                     className="input-field input-with-icon"
-                                    placeholder={role === 'admin' ? 'admin@ev.com' : 'customer@ev.com'}
+                                    placeholder={role === 'admin' ? 'admin@catlink.io' : 'maria@example.com'}
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
@@ -136,7 +136,7 @@ export default function LoginPage() {
                 </div>
 
                 <p className="login-footer">
-                    Secured with 5G · SIM Swap Detection · AI Fraud Shield
+                    Secured with 5G · Nokia Network as Code · AI Fraud Shield
                 </p>
             </div>
         </div>

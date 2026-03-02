@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
-import { MOCK_STATIONS } from '../../data/mockData';
+import { fetchStations } from '../../services/api';
 import { WifiOff, AlertTriangle, Clock, RefreshCw, X, Send } from 'lucide-react';
-
-const offlineStations = MOCK_STATIONS.filter(s => s.status === 'offline');
 
 function timeSince(iso) {
     const s = Math.floor((Date.now() - new Date(iso)) / 1000);
@@ -63,6 +61,11 @@ function IncidentModal({ station, onClose }) {
 export default function OfflineMonitoring() {
     const [ticks, setTicks] = useState(0);
     const [reportStation, setReportStation] = useState(null);
+    const [stations, setStations] = useState([]);
+
+    useEffect(() => {
+        fetchStations().then(setStations);
+    }, []);
 
     useEffect(() => {
         const id = setInterval(() => setTicks(t => t + 1), 1000);
@@ -77,11 +80,11 @@ export default function OfflineMonitoring() {
                     <p style={{ color: 'var(--color-text-muted)', fontSize: '0.82rem' }}>Real-time disconnection alerts</p>
                 </div>
                 <span className="badge badge-red" style={{ fontSize: '0.8rem', padding: '6px 14px' }}>
-                    <WifiOff size={13} /> {offlineStations.length} Disconnected
+                    <WifiOff size={13} /> {stations.filter(s => s.status === 'offline').length} Disconnected
                 </span>
             </div>
 
-            {offlineStations.length === 0 && (
+            {stations.filter(s => s.status === 'offline').length === 0 && (
                 <div className="card" style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-muted)' }}>
                     <WifiOff size={40} style={{ marginBottom: '1rem', opacity: 0.3 }} />
                     <p>All stations are online</p>
@@ -89,7 +92,7 @@ export default function OfflineMonitoring() {
             )}
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {offlineStations.map(s => {
+                {stations.filter(s => s.status === 'offline').map(s => {
                     const downTime = timeSince(s.lastHeartbeat);
                     const isLong = (Date.now() - new Date(s.lastHeartbeat)) > 3600000;
 
