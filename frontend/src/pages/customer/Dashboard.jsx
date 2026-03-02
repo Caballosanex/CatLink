@@ -176,14 +176,13 @@ export default function CustomerDashboard() {
                 {/* Battery bar */}
                 <div className="battery-bar-wrap">
                     <div className="battery-bar-track">
-                        <div className="battery-bar-fill" style={{ width: `${isLive ? batteryNow : 0}%` }}>
-                            {TARGET_BATTERY_PCT > 0 && (
-                                <div className="battery-bar-target" style={{ left: `${TARGET_BATTERY_PCT}%` }}>
-                                    <div className="target-line" />
-                                    <span className="target-label">{TARGET_BATTERY_PCT}% target</span>
-                                </div>
-                            )}
-                        </div>
+                        <div className="battery-bar-fill" style={{ width: `${isLive ? batteryNow : 0}%` }} />
+                        {TARGET_BATTERY_PCT > 0 && (
+                            <div className="battery-bar-target" style={{ left: `${TARGET_BATTERY_PCT}%` }}>
+                                <div className="target-line" />
+                                <span className="target-label">{TARGET_BATTERY_PCT}% target</span>
+                            </div>
+                        )}
                     </div>
                     <div className="battery-labels">
                         <span>{BATTERY_START_PCT}% start</span>
