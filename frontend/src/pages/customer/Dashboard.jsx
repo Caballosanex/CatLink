@@ -9,8 +9,6 @@ import './Dashboard.css';
 
 // EV battery simulation constants
 const BATTERY_CAPACITY_KWH = 82;
-const DEFAULT_BATTERY_START_PCT = 22;
-const DEFAULT_TARGET_BATTERY_PCT = 80;
 const PRICE_PER_KWH = 0.40;
 const CHARGE_EFFICIENCY = 0.9;
 
@@ -72,27 +70,28 @@ export default function CustomerDashboard() {
 
     const isLive = session?.status === 'approved';
 
-    // Use real values from session, fall back to defaults
-    const BATTERY_START_PCT = session?.batteryStart ?? DEFAULT_BATTERY_START_PCT;
-    const TARGET_BATTERY_PCT = session?.batteryTarget ?? DEFAULT_TARGET_BATTERY_PCT;
+    // Use real values from session — only meaningful when session is active
+    const BATTERY_START_PCT = session?.batteryStart ?? 0;
+    const TARGET_BATTERY_PCT = session?.batteryTarget ?? 0;
+    const hasBatteryData = isLive && BATTERY_START_PCT > 0 && TARGET_BATTERY_PCT > BATTERY_START_PCT;
 
     // Compute live session fields from elapsed time
-    const kwhSoFar = isLive ? Math.min(
+    const kwhSoFar = (isLive && hasBatteryData) ? Math.min(
         ((elapsed / 60) * chargerPower * CHARGE_EFFICIENCY),
         ((TARGET_BATTERY_PCT - BATTERY_START_PCT) / 100) * BATTERY_CAPACITY_KWH
     ) : (session?.kwhConsumed || 0);
 
-    const costSoFar = isLive
+    const costSoFar = (isLive && hasBatteryData)
         ? (kwhSoFar * PRICE_PER_KWH)
         : (session?.cost || 0);
 
-    const batteryNow = isLive
+    const batteryNow = (isLive && hasBatteryData)
         ? Math.min(BATTERY_START_PCT + Math.round((kwhSoFar / BATTERY_CAPACITY_KWH) * 100), TARGET_BATTERY_PCT)
         : 0;
 
-    const totalKwhNeeded = ((TARGET_BATTERY_PCT - BATTERY_START_PCT) / 100) * BATTERY_CAPACITY_KWH;
-    const totalMinutesNeeded = chargerPower > 0 ? (totalKwhNeeded / (chargerPower * CHARGE_EFFICIENCY)) * 60 : 0;
-    const estimatedMinutesLeft = isLive ? Math.max(0, Math.round(totalMinutesNeeded - elapsed)) : 0;
+    const totalKwhNeeded = hasBatteryData ? ((TARGET_BATTERY_PCT - BATTERY_START_PCT) / 100) * BATTERY_CAPACITY_KWH : 0;
+    const totalMinutesNeeded = (hasBatteryData && chargerPower > 0) ? (totalKwhNeeded / (chargerPower * CHARGE_EFFICIENCY)) * 60 : 0;
+    const estimatedMinutesLeft = (isLive && hasBatteryData) ? Math.max(0, Math.round(totalMinutesNeeded - elapsed)) : 0;
 
     const recentSessions = sessions.slice(0, 3);
 
@@ -177,10 +176,11 @@ export default function CustomerDashboard() {
                     </div>
                 </div>
 
-                {/* Battery bar */}
+                {/* Battery bar — only shown when session has real battery data */}
+                {hasBatteryData && (
                 <div className="battery-bar-wrap">
                     <div className="battery-bar-track">
-                        <div className="battery-bar-fill" style={{ width: `${isLive ? batteryNow : 0}%` }} />
+                        <div className="battery-bar-fill" style={{ width: `${batteryNow}%` }} />
                         {TARGET_BATTERY_PCT > 0 && (
                             <div className="battery-bar-target" style={{ left: `${TARGET_BATTERY_PCT}%` }}>
                                 <div className="target-line" />
@@ -190,9 +190,10 @@ export default function CustomerDashboard() {
                     </div>
                     <div className="battery-labels">
                         <span>{BATTERY_START_PCT}% start</span>
-                        <span style={{ color: 'var(--color-primary)' }}>{isLive ? batteryNow : 0}% now</span>
+                        <span style={{ color: 'var(--color-primary)' }}>{batteryNow}% now</span>
                     </div>
                 </div>
+                )}
 
                 {isLive && (
                     <button className="stop-charge-btn" onClick={handleStop} disabled={stopping}>

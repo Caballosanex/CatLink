@@ -19,6 +19,7 @@ async def start_session(
     user_lon: float,
     db: AsyncSession,
     user_id: Optional[str] = None,
+    battery_start: Optional[int] = None,
     battery_target: Optional[int] = None,
 ) -> SessionResponse:
     """Inicia una sesión de carga, evaluada por el agente IA."""
@@ -71,8 +72,8 @@ async def start_session(
     else:
         status = SessionStatus.REJECTED
     
-    # Generate battery values
-    battery_start_val = random.randint(15, 40)
+    # Generate battery values — use frontend-provided values or fall back to random
+    battery_start_val = battery_start if battery_start and 5 <= battery_start <= 95 else random.randint(15, 40)
     battery_target_val = battery_target if battery_target and battery_target > battery_start_val else 80
 
     # Crear respuesta de sesión
