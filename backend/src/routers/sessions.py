@@ -32,7 +32,7 @@ async def end_session(session_id: str):
     return session
 
 
-@router.get("/", response_model=List[SessionResponse])
+@router.get("", response_model=List[SessionResponse])
 async def list_sessions():
     """Lista todas las sesiones."""
     return get_all_sessions()

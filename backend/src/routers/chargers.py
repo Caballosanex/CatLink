@@ -6,7 +6,7 @@ from src.services import get_all_chargers, get_charger_by_id, get_charger_status
 router = APIRouter()
 
 
-@router.get("/", response_model=List[Charger])
+@router.get("", response_model=List[Charger])
 async def list_chargers():
     """Lista todos los cargadores."""
     return get_all_chargers()
