@@ -1,0 +1,26 @@
+[
+  {
+    "id": "USR-001",
+    "name": "Maria García",
+    "phone": "+34612345678",
+    "email": "maria@example.com",
+    "vehicle": "Tesla Model 3",
+    "is_fraud_test": false
+  },
+  {
+    "id": "USR-002",
+    "name": "Test Fraud User",
+    "phone": "+34666666666",
+    "email": "fraud@test.com",
+    "vehicle": "Unknown",
+    "is_fraud_test": true
+  },
+  {
+    "id": "USR-003",
+    "name": "Carlos López",
+    "phone": "+34655443322",
+    "email": "carlos@example.com",
+    "vehicle": "VW ID.4",
+    "is_fraud_test": false
+  }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "CHG-001",
+    "name": "Plaça Catalunya",
+    "address": "Plaça Catalunya, 1, 08002 Barcelona",
+    "lat": 41.3870,
+    "lon": 2.1700,
+    "power_kw": 150,
+    "connectors": ["CCS2", "CHAdeMO"],
+    "status": "available",
+    "zone": "centro",
+    "iot_phone": "+34900000001"
+  },
+  {
+    "id": "CHG-002",
+    "name": "Passeig de Gràcia",
+    "address": "Passeig de Gràcia, 50, 08007 Barcelona",
+    "lat": 41.3950,
+    "lon": 2.1640,
+    "power_kw": 100,
+    "connectors": ["CCS2"],
+    "status": "in_use",
+    "zone": "centro",
+    "iot_phone": "+34900000002"
+  },
+  {
+    "id": "CHG-003",
+    "name": "Barceloneta",
+    "address": "Passeig Marítim, 15, 08003 Barcelona",
+    "lat": 41.3780,
+    "lon": 2.1890,
+    "power_kw": 50,
+    "connectors": ["CCS2", "Type2"],
+    "status": "offline",
+    "zone": "centro",
+    "iot_phone": "+34900000003"
+  },
+  {
+    "id": "CHG-004",
+    "name": "Diagonal Mar",
+    "address": "Av. Diagonal, 3, 08019 Barcelona",
+    "lat": 41.4100,
+    "lon": 2.2200,
+    "power_kw": 50,
+    "connectors": ["CCS2"],
+    "status": "available",
+    "zone": "norte",
+    "iot_phone": "+34900000004"
+  },
+  {
+    "id": "CHG-005",
+    "name": "Zona Franca",
+    "address": "Carrer 60, 25, 08040 Barcelona",
+    "lat": 41.3500,
+    "lon": 2.1300,
+    "power_kw": 150,
+    "connectors": ["CCS2", "CHAdeMO"],
+    "status": "available",
+    "zone": "sur",
+    "iot_phone": "+34900000005"
+  },
+  {
+    "id": "CHG-006",
+    "name": "Glòries",
+    "address": "Plaça de les Glòries, 08013 Barcelona",
+    "lat": 41.4036,
+    "lon": 2.1875,
+    "power_kw": 100,
+    "connectors": ["CCS2"],
+    "status": "available",
+    "zone": "centro",
+    "iot_phone": "+34900000006"
+  }
+]

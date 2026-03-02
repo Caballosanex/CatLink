@@ -1,0 +1,23 @@
+[
+  {
+    "id": "centro",
+    "name": "Centro",
+    "default_density": "high",
+    "center_lat": 41.3900,
+    "center_lon": 2.1700
+  },
+  {
+    "id": "norte",
+    "name": "Norte",
+    "default_density": "medium",
+    "center_lat": 41.4200,
+    "center_lon": 2.1800
+  },
+  {
+    "id": "sur",
+    "name": "Sur",
+    "default_density": "low",
+    "center_lat": 41.3400,
+    "center_lon": 2.1400
+  }
+]
