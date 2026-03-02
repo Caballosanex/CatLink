@@ -66,3 +66,5 @@ class SessionDB(Base):
     cost: Mapped[float | None] = mapped_column(Float, nullable=True)
     price_per_kwh: Mapped[float | None] = mapped_column(Float, nullable=True)
     duration_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    battery_start: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    battery_target: Mapped[int | None] = mapped_column(Integer, nullable=True)

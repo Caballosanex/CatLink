@@ -1,3 +1,4 @@
+import random
 import uuid
 from datetime import datetime
 from typing import List, Optional
@@ -18,6 +19,7 @@ async def start_session(
     user_lon: float,
     db: AsyncSession,
     user_id: Optional[str] = None,
+    battery_target: Optional[int] = None,
 ) -> SessionResponse:
     """Inicia una sesión de carga, evaluada por el agente IA."""
     
@@ -69,6 +71,10 @@ async def start_session(
     else:
         status = SessionStatus.REJECTED
     
+    # Generate battery values
+    battery_start_val = random.randint(15, 40)
+    battery_target_val = battery_target if battery_target and battery_target > battery_start_val else 80
+
     # Crear respuesta de sesión
     session = SessionResponse(
         id=session_id,
@@ -83,6 +89,8 @@ async def start_session(
         qod_session_id=result.get("qod_session_id"),
         created_at=datetime.now(),
         station_name=charger.name,
+        battery_start=battery_start_val,
+        battery_target=battery_target_val,
     )
 
     db_row = SessionDB(
@@ -98,6 +106,8 @@ async def start_session(
         qod_session_id=session.qod_session_id,
         created_at=session.created_at,
         station_name=session.station_name,
+        battery_start=session.battery_start,
+        battery_target=session.battery_target,
     )
     db.add(db_row)
     await db.commit()

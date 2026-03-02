@@ -39,6 +39,8 @@ export function mapSession(s) {
     pricePerKwh: s.price_per_kwh ?? s.pricePerKwh,
     status: s.status,
     decision: s.decision,
+    batteryStart: s.battery_start ?? s.batteryStart ?? null,
+    batteryTarget: s.battery_target ?? s.batteryTarget ?? null,
   };
 }
 
@@ -107,7 +109,8 @@ export async function startChargingSession(
   userPhone,
   userLat,
   userLon,
-  userId
+  userId,
+  batteryTarget
 ) {
   try {
     const data = await fetch(`${API_BASE}/sessions/start`, {
@@ -119,6 +122,7 @@ export async function startChargingSession(
         user_lat: userLat,
         user_lon: userLon,
         user_id: userId,
+        battery_target: batteryTarget || null,
       }),
     }).then(toJson);
     return mapSession(data);
