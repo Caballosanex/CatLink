@@ -113,6 +113,7 @@ textarea {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   padding: 1.25rem;
+  margin-top: 15px;
 }
 
 .card-hover {
