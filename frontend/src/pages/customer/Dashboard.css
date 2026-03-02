@@ -1,0 +1,206 @@
+.dash-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+/* Active Session */
+.active-session-card {
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, var(--color-surface), #0f1f3a);
+    border-color: rgba(0, 212, 255, 0.25);
+    box-shadow: 0 0 30px rgba(0, 212, 255, 0.08);
+}
+
+.session-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1.25rem;
+}
+
+.session-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-green);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--color-green);
+    animation: blink 1.5s ease-in-out infinite;
+}
+
+.session-sub {
+    font-size: 0.8rem;
+    color: var(--color-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 3px;
+}
+
+.session-ring {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.ring-label {
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+}
+
+.ring-svg {
+    filter: drop-shadow(0 0 8px var(--color-primary-dim));
+}
+
+.session-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+@media (max-width: 500px) {
+    .session-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.sstat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.65rem;
+}
+
+.sstat-icon {
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.sstat-val {
+    font-family: var(--font-display);
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+.sstat-lbl {
+    font-size: 0.7rem;
+    color: var(--color-text-muted);
+}
+
+/* Battery Bar */
+.battery-bar-wrap {
+    margin-top: 0.5rem;
+}
+
+.battery-bar-track {
+    height: 10px;
+    background: var(--color-surface-3);
+    border-radius: 100px;
+    overflow: visible;
+    position: relative;
+    margin-bottom: 6px;
+}
+
+.battery-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-accent), var(--color-primary));
+    border-radius: 100px;
+    position: relative;
+    transition: width 1s ease;
+    box-shadow: 0 0 10px var(--color-primary-glow);
+}
+
+.battery-bar-target {
+    position: absolute;
+    top: -16px;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.target-line {
+    width: 2px;
+    height: 24px;
+    background: var(--color-yellow);
+    border-radius: 1px;
+    margin-top: 16px;
+}
+
+.target-label {
+    font-size: 0.65rem;
+    color: var(--color-yellow);
+    white-space: nowrap;
+    margin-top: 2px;
+}
+
+.battery-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    color: var(--color-text-muted);
+}
+
+/* History rows */
+.history-row {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--color-border);
+}
+
+.history-row:last-child {
+    border-bottom: none;
+}
+
+.history-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    background: var(--color-primary-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    flex-shrink: 0;
+}
+
+.history-info {
+    flex: 1;
+}
+
+.history-station {
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.history-date {
+    font-size: 0.75rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+}
+
+.history-cost {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--color-primary);
+}
