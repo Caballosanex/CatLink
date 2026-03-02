@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { MOCK_STATIONS } from '../../data/mockData';
+import { useEffect, useState } from 'react';
+import { fetchStations } from '../../services/api';
 import { Search, Wifi, WifiOff, Zap, MapPin, ChevronDown, ChevronUp, Activity } from 'lucide-react';
 
 function timeSince(iso) {
@@ -18,10 +18,15 @@ const STATUS = {
 export default function StationManagement() {
     const [search, setSearch] = useState('');
     const [expanded, setExpanded] = useState(null);
+    const [stations, setStations] = useState([]);
 
-    const filtered = MOCK_STATIONS.filter(s =>
+    useEffect(() => {
+        fetchStations().then(setStations);
+    }, []);
+
+    const filtered = stations.filter(s =>
         s.name.toLowerCase().includes(search.toLowerCase()) ||
-        s.city.toLowerCase().includes(search.toLowerCase())
+        (s.zone || '').toLowerCase().includes(search.toLowerCase())
     );
 
     return (
@@ -29,12 +34,12 @@ export default function StationManagement() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div>
                     <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.3rem', fontWeight: 700 }}>Station Management</h2>
-                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.82rem' }}>{MOCK_STATIONS.length} registered stations</p>
+                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.82rem' }}>{stations.length} registered stations</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <span className="badge badge-green">{MOCK_STATIONS.filter(s => s.status === 'available').length} Available</span>
-                    <span className="badge badge-yellow">{MOCK_STATIONS.filter(s => s.status === 'high_demand').length} High Demand</span>
-                    <span className="badge badge-red">{MOCK_STATIONS.filter(s => s.status === 'offline').length} Offline</span>
+                    <span className="badge badge-green">{stations.filter(s => s.status === 'available').length} Available</span>
+                    <span className="badge badge-yellow">{stations.filter(s => s.status === 'high_demand').length} High Demand</span>
+                    <span className="badge badge-red">{stations.filter(s => s.status === 'offline').length} Offline</span>
                 </div>
             </div>
 
@@ -42,7 +47,7 @@ export default function StationManagement() {
             <div style={{ position: 'relative', marginBottom: '1rem' }}>
                 <Search size={16} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-dim)' }} />
                 <input className="input-field" style={{ paddingLeft: '2.5rem' }}
-                    placeholder="Search stations by name or city…"
+                    placeholder="Search stations by name or zone…"
                     value={search} onChange={e => setSearch(e.target.value)} />
             </div>
 
@@ -80,7 +85,7 @@ export default function StationManagement() {
                                             </td>
                                             <td style={{ fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                                    <MapPin size={12} /> {s.city}
+                                                    <MapPin size={12} /> {s.zone}
                                                 </div>
                                             </td>
                                             <td>{isExp ? <ChevronUp size={16} color="var(--color-primary)" /> : <ChevronDown size={16} />}</td>
@@ -90,7 +95,7 @@ export default function StationManagement() {
                                                 <td colSpan={7} style={{ background: 'var(--color-surface-2)', padding: '0.75rem 1rem' }}>
                                                     <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', fontSize: '0.82rem' }}>
                                                         <div><span style={{ color: 'var(--color-text-muted)' }}>Full Address: </span><strong>{s.address}</strong></div>
-                                                        <div><span style={{ color: 'var(--color-text-muted)' }}>Coordinates: </span><strong>{s.lat.toFixed(4)}°N, {Math.abs(s.lng).toFixed(4)}°W</strong></div>
+                                                        <div><span style={{ color: 'var(--color-text-muted)' }}>Coordinates: </span><strong>{s.lat.toFixed(4)}°N, {Math.abs(s.lng).toFixed(4)}°E</strong></div>
                                                         <div><span style={{ color: 'var(--color-text-muted)' }}>AI Occupancy: </span><strong style={{ color: 'var(--color-primary)' }}>{s.aiOccupancy}%</strong></div>
                                                         <div><span style={{ color: 'var(--color-text-muted)' }}>Last Ping: </span><strong>{new Date(s.lastHeartbeat).toLocaleTimeString()}</strong></div>
                                                     </div>

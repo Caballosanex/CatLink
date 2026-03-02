@@ -26,7 +26,7 @@ export default function CustomerLayout() {
             <header className="customer-navbar glass">
                 <div className="nav-brand">
                     <div className="nav-logo-icon"><Zap size={18} strokeWidth={2.5} /></div>
-                    <span className="nav-logo-text">VoltGrid</span>
+                    <span className="nav-logo-text">CatLink</span>
                     <span className="nav-badge badge badge-blue">5G</span>
                 </div>
                 <div className="nav-right">

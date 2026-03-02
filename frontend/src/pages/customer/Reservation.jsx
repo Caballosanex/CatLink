@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { MOCK_STATIONS } from '../../data/mockData';
+import { useEffect, useState } from 'react';
+import { fetchStations, startChargingSession } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import {
     User, MapPin, Activity, CheckCircle, ChevronRight, Zap,
@@ -9,22 +9,29 @@ import './Reservation.css';
 
 const STEPS = ['Identity', 'Location', 'Demand', 'Confirm'];
 
-const availableStations = MOCK_STATIONS.filter(s => s.status !== 'offline');
-
 export default function Reservation() {
     const { user } = useAuth();
     const [step, setStep] = useState(0);
     const [locating, setLocating] = useState(false);
     const [locDone, setLocDone] = useState(false);
-    const [selectedStation, setSelectedStation] = useState(availableStations[0]);
+    const [stations, setStations] = useState([]);
+    const [selectedStation, setSelectedStation] = useState(null);
     const [demand, setDemand] = useState(60);
     const [charging, setCharging] = useState(false);
     const [done, setDone] = useState(false);
 
+    useEffect(() => {
+        fetchStations().then((data) => {
+            setStations(data);
+            const available = data.filter((s) => s.status !== 'offline');
+            setSelectedStation(available[0] || data[0] || null);
+        });
+    }, []);
+
     const batteryStart = 22;
     const kwhNeeded = ((demand - batteryStart) / 100 * 82);
-    const minutes = Math.round((kwhNeeded / selectedStation.power) * 60);
-    const demandMultiplier = selectedStation.status === 'high_demand' ? 1.4 : 1.0;
+    const minutes = selectedStation ? Math.round((kwhNeeded / selectedStation.power) * 60) : 0;
+    const demandMultiplier = selectedStation?.status === 'high_demand' ? 1.4 : 1.0;
     const basePriceKwh = 0.40;
     const priceKwh = (basePriceKwh * demandMultiplier).toFixed(3);
     const totalCost = (kwhNeeded * priceKwh).toFixed(2);
@@ -34,9 +41,18 @@ export default function Reservation() {
         setTimeout(() => { setLocating(false); setLocDone(true); }, 2000);
     };
 
-    const handleStart = () => {
+    const handleStart = async () => {
+        if (!selectedStation) return;
         setCharging(true);
-        setTimeout(() => { setCharging(false); setDone(true); }, 2000);
+        await startChargingSession(
+            selectedStation.id,
+            user?.phone,
+            41.387,
+            2.17,
+            user?.id
+        );
+        setCharging(false);
+        setDone(true);
     };
 
     if (done) return (
@@ -47,7 +63,7 @@ export default function Reservation() {
             <div style={{ textAlign: 'center' }}>
                 <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '1.5rem', marginBottom: 8 }}>Charging Started!</h2>
                 <p style={{ color: 'var(--color-text-muted)' }}>
-                    Session active at <strong>{selectedStation.name}</strong>.<br />
+                    Session active at <strong>{selectedStation?.name}</strong>.<br />
                     Estimated time: <strong>{minutes} minutes</strong>
                 </p>
             </div>
@@ -123,7 +139,7 @@ export default function Reservation() {
                             <CheckCircle size={20} color="var(--color-green)" />
                             <div>
                                 <div style={{ fontWeight: 600 }}>Location Verified ✓</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>40.7128° N, 74.0060° W — New York, NY</div>
+                                 <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>41.3870° N, 2.1700° E — Barcelona, ES</div>
                                 <div style={{ fontSize: '0.78rem', color: 'var(--color-green)', marginTop: 4 }}>3 stations within 2km</div>
                             </div>
                         </div>
@@ -132,16 +148,16 @@ export default function Reservation() {
                         <div style={{ marginTop: '1.25rem' }}>
                             <label className="label">Select Station</label>
                             <div className="station-select-list">
-                                {availableStations.slice(0, 4).map(s => (
+                                {stations.filter(s => s.status !== 'offline').slice(0, 4).map(s => (
                                     <div key={s.id}
-                                        className={`station-option ${selectedStation.id === s.id ? 'selected' : ''}`}
+                                        className={`station-option ${selectedStation?.id === s.id ? 'selected' : ''}`}
                                         onClick={() => setSelectedStation(s)}>
                                         <div className={`sopt-dot ${s.status}`} />
                                         <div className="sopt-info">
                                             <div className="sopt-name">{s.name}</div>
                                             <div className="sopt-sub">{s.power}kW · {s.connectors} ports</div>
                                         </div>
-                                        {selectedStation.id === s.id && <CheckCircle size={16} color="var(--color-primary)" />}
+                                        {selectedStation?.id === s.id && <CheckCircle size={16} color="var(--color-primary)" />}
                                     </div>
                                 ))}
                             </div>
@@ -201,13 +217,13 @@ export default function Reservation() {
                 <div className="step-card card animate-fade-up">
                     <div className="step-card-header"><Zap size={20} color="var(--color-primary)" /><h3>Confirm & Start</h3></div>
                     <div className="confirm-rows">
-                        <div className="confirm-row"><span>Station</span><strong>{selectedStation.name}</strong></div>
+                         <div className="confirm-row"><span>Station</span><strong>{selectedStation?.name}</strong></div>
                         <div className="confirm-row"><span>Driver</span><strong>{user?.name}</strong></div>
                         <div className="confirm-row"><span>Vehicle</span><strong>{user?.vehicle}</strong></div>
                         <div className="confirm-row"><span>Target Battery</span><strong>{demand}%</strong></div>
                         <div className="confirm-row"><span>Energy</span><strong>{kwhNeeded.toFixed(1)} kWh</strong></div>
                         <div className="confirm-row"><span>Est. Time</span><strong>{minutes} minutes</strong></div>
-                        <div className="confirm-row"><span>Price/kWh</span><strong>${priceKwh}</strong></div>
+                         <div className="confirm-row"><span>Price/kWh</span><strong>${priceKwh}</strong></div>
                         <div className="confirm-row total-row"><span>Total Cost</span><strong style={{ color: 'var(--color-primary)', fontSize: '1.1rem' }}>${totalCost}</strong></div>
                     </div>
                     <button className="btn btn-primary step-next start-btn" onClick={handleStart} disabled={charging}>

@@ -1,36 +1,23 @@
-import json
-from pathlib import Path
 from typing import List, Optional
-from src.models import Charger, ChargerStatus
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.db_models import ChargerDB
 from src.services.nokia_service import nokia_service
 
-DATA_PATH = Path(__file__).parent.parent.parent / "data" / "chargers.json"
+async def get_all_chargers(db: AsyncSession) -> List[ChargerDB]:
+    result = await db.execute(select(ChargerDB))
+    return list(result.scalars().all())
 
 
-def load_chargers() -> List[Charger]:
-    """Carga los cargadores desde el archivo JSON."""
-    with open(DATA_PATH, "r") as f:
-        data = json.load(f)
-    return [Charger(**c) for c in data]
+async def get_charger_by_id(charger_id: str, db: AsyncSession) -> Optional[ChargerDB]:
+    result = await db.execute(select(ChargerDB).where(ChargerDB.id == charger_id))
+    return result.scalars().first()
 
 
-def get_all_chargers() -> List[Charger]:
-    """Obtiene todos los cargadores."""
-    return load_chargers()
-
-
-def get_charger_by_id(charger_id: str) -> Optional[Charger]:
-    """Obtiene un cargador por su ID."""
-    chargers = load_chargers()
-    for charger in chargers:
-        if charger.id == charger_id:
-            return charger
-    return None
-
-
-async def get_charger_status(charger_id: str) -> Optional[dict]:
+async def get_charger_status(charger_id: str, db: AsyncSession) -> Optional[dict]:
     """Obtiene el estado de conectividad de un cargador (Nokia API)."""
-    charger = get_charger_by_id(charger_id)
+    charger = await get_charger_by_id(charger_id, db)
     if not charger:
         return None
     
@@ -41,3 +28,13 @@ async def get_charger_status(charger_id: str) -> Optional[dict]:
         "network_type": status.get("network_type"),
         "mock": status.get("mock", True)
     }
+
+
+async def update_charger_status(charger_id: str, status: str, db: AsyncSession) -> Optional[ChargerDB]:
+    charger = await get_charger_by_id(charger_id, db)
+    if not charger:
+        return None
+    charger.status = status
+    await db.commit()
+    await db.refresh(charger)
+    return charger

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { MOCK_ACTIVE_SESSION, MOCK_SESSIONS } from '../../data/mockData';
+import { fetchSessions } from '../../services/api';
 import {
     BatteryCharging, MapPin, Shield, Clock, Zap, TrendingUp,
     AlertTriangle, CheckCircle, ChevronRight, Activity
@@ -43,16 +43,28 @@ function FraudBadge({ risk }) {
 export default function CustomerDashboard() {
     const { user } = useAuth();
     const [elapsed, setElapsed] = useState(0);
-    const session = MOCK_ACTIVE_SESSION;
-    const recentSessions = MOCK_SESSIONS.filter(s => s.userId === user?.id).slice(0, 3);
+    const [session, setSession] = useState(null);
+    const [sessions, setSessions] = useState([]);
 
     useEffect(() => {
+        if (user?.id) {
+            fetchSessions(user.id).then((data) => {
+                setSessions(data);
+                setSession(data[0] || null);
+            });
+        }
+    }, [user?.id]);
+
+    const recentSessions = sessions.slice(0, 3);
+
+    useEffect(() => {
+        if (!session?.startTime) return;
         const start = new Date(session.startTime);
         const tick = () => setElapsed(Math.floor((Date.now() - start) / 60000));
         tick();
         const id = setInterval(tick, 10000);
         return () => clearInterval(id);
-    }, []);
+    }, [session?.startTime]);
 
     const fmt = (d) => new Date(d).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
@@ -75,11 +87,11 @@ export default function CustomerDashboard() {
                 <div className="session-header">
                     <div>
                         <div className="session-badge"><span className="pulse-dot" />Live Session</div>
-                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', marginTop: 6 }}>{session.stationName}</h3>
-                        <p className="session-sub"><MapPin size={13} /> Station {session.stationId.toUpperCase()}</p>
+                        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.1rem', marginTop: 6 }}>{session?.stationName || 'No active session'}</h3>
+                        <p className="session-sub"><MapPin size={13} /> {session?.stationId ? `Station ${session.stationId.toUpperCase()}` : 'Start a charge to see details'}</p>
                     </div>
                     <div className="session-ring">
-                        <RingProgress value={session.batteryNow} max={100} color="var(--color-primary)" size={110} />
+                        <RingProgress value={session?.batteryNow || 0} max={100} color="var(--color-primary)" size={110} />
                         <span className="ring-label">Battery</span>
                     </div>
                 </div>
@@ -88,28 +100,28 @@ export default function CustomerDashboard() {
                     <div className="sstat">
                         <Clock size={16} className="sstat-icon" />
                         <div>
-                            <div className="sstat-val">{elapsed}m</div>
+                            <div className="sstat-val">{session ? `${elapsed}m` : '--'}</div>
                             <div className="sstat-lbl">Elapsed</div>
                         </div>
                     </div>
                     <div className="sstat">
                         <Zap size={16} className="sstat-icon" />
                         <div>
-                            <div className="sstat-val">{session.kwhSoFar} kWh</div>
+                            <div className="sstat-val">{session?.kwhSoFar ?? '--'} kWh</div>
                             <div className="sstat-lbl">Charged</div>
                         </div>
                     </div>
                     <div className="sstat">
                         <TrendingUp size={16} className="sstat-icon" />
                         <div>
-                            <div className="sstat-val">${session.costSoFar}</div>
+                            <div className="sstat-val">{session ? `$${session.costSoFar}` : '--'}</div>
                             <div className="sstat-lbl">Cost so far</div>
                         </div>
                     </div>
                     <div className="sstat">
                         <BatteryCharging size={16} className="sstat-icon" />
                         <div>
-                            <div className="sstat-val">{session.estimatedMinutesLeft}m</div>
+                            <div className="sstat-val">{session ? `${session.estimatedMinutesLeft}m` : '--'}</div>
                             <div className="sstat-lbl">ETA</div>
                         </div>
                     </div>
@@ -118,16 +130,16 @@ export default function CustomerDashboard() {
                 {/* Battery bar */}
                 <div className="battery-bar-wrap">
                     <div className="battery-bar-track">
-                        <div className="battery-bar-fill" style={{ width: `${session.batteryNow}%` }}>
-                            <div className="battery-bar-target" style={{ left: `${session.targetBattery}%` }}>
+                        <div className="battery-bar-fill" style={{ width: `${session?.batteryNow || 0}%` }}>
+                            <div className="battery-bar-target" style={{ left: `${session?.targetBattery || 0}%` }}>
                                 <div className="target-line" />
-                                <span className="target-label">{session.targetBattery}% target</span>
+                                <span className="target-label">{session?.targetBattery || 0}% target</span>
                             </div>
                         </div>
                     </div>
                     <div className="battery-labels">
-                        <span>{session.batteryStart}% start</span>
-                        <span style={{ color: 'var(--color-primary)' }}>{session.batteryNow}% now</span>
+                        <span>{session?.batteryStart || 0}% start</span>
+                        <span style={{ color: 'var(--color-primary)' }}>{session?.batteryNow || 0}% now</span>
                     </div>
                 </div>
             </div>
@@ -138,7 +150,7 @@ export default function CustomerDashboard() {
                     <div style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Activity size={14} />&nbsp;TOTAL SESSIONS
                     </div>
-                    <div className="stat-value">{MOCK_SESSIONS.filter(s => s.userId === user?.id).length}</div>
+                    <div className="stat-value">{sessions.length}</div>
                     <div className="stat-label">This month</div>
                 </div>
                 <div className="card">
@@ -146,7 +158,7 @@ export default function CustomerDashboard() {
                         <Zap size={14} />&nbsp;TOTAL kWh
                     </div>
                     <div className="stat-value">
-                        {MOCK_SESSIONS.filter(s => s.userId === user?.id).reduce((a, s) => a + s.kwhConsumed, 0).toFixed(1)}
+                        {sessions.reduce((a, s) => a + (s.kwhConsumed || 0), 0).toFixed(1)}
                     </div>
                     <div className="stat-label">Energy consumed</div>
                 </div>
@@ -155,7 +167,7 @@ export default function CustomerDashboard() {
                         <TrendingUp size={14} />&nbsp;TOTAL SPENT
                     </div>
                     <div className="stat-value">
-                        ${MOCK_SESSIONS.filter(s => s.userId === user?.id).reduce((a, s) => a + s.cost, 0).toFixed(2)}
+                        ${sessions.reduce((a, s) => a + (s.cost || 0), 0).toFixed(2)}
                     </div>
                     <div className="stat-label">All time</div>
                 </div>
@@ -172,9 +184,9 @@ export default function CustomerDashboard() {
                         <div className="history-icon"><Zap size={16} /></div>
                         <div className="history-info">
                             <div className="history-station">{s.stationName}</div>
-                            <div className="history-date">{fmt(s.startTime)} · {s.duration}min · {s.kwhConsumed}kWh</div>
+                        <div className="history-date">{fmt(s.startTime)} · {s.duration}min · {s.kwhConsumed || 0}kWh</div>
                         </div>
-                        <div className="history-cost">${s.cost.toFixed(2)}</div>
+                        <div className="history-cost">${(s.cost || 0).toFixed(2)}</div>
                     </div>
                 ))}
             </div>

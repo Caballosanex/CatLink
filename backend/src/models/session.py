@@ -24,6 +24,7 @@ class StartSessionRequest(BaseModel):
     user_phone: str
     user_lat: float
     user_lon: float
+    user_id: Optional[str] = None
 
 
 class StopSessionRequest(BaseModel):
@@ -41,6 +42,7 @@ class SessionResponse(BaseModel):
     id: str
     charger_id: str
     user_phone: str
+    user_id: Optional[str] = None
     status: SessionStatus
     decision: Optional[AgentDecision] = None
     reason: Optional[str] = None
@@ -48,6 +50,12 @@ class SessionResponse(BaseModel):
     agent_logs: List[AgentLogEntry] = []
     qod_session_id: Optional[str] = None
     created_at: datetime
+    ended_at: Optional[datetime] = None
+    station_name: Optional[str] = None
+    kwh_consumed: Optional[float] = None
+    cost: Optional[float] = None
+    price_per_kwh: Optional[float] = None
+    duration_min: Optional[int] = None
     
     class Config:
         from_attributes = True

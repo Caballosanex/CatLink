@@ -28,7 +28,7 @@ export default function AdminLayout() {
                 <div className="sidebar-brand">
                     <div className="nav-logo-icon"><Zap size={18} strokeWidth={2.5} /></div>
                     <div>
-                        <div className="sidebar-title">VoltGrid AI</div>
+                        <div className="sidebar-title">CatLink</div>
                         <div className="sidebar-sub">Admin Console</div>
                     </div>
                 </div>

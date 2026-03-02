@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { seedLocalStorage } from '../data/mockData';
+import { loginUser } from '../services/api';
 
 const AuthContext = createContext(null);
 
@@ -8,36 +8,29 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        seedLocalStorage();
-        const stored = localStorage.getItem('voltgrid_current_user');
+        const stored = localStorage.getItem('catlink_current_user');
         if (stored) {
             setUser(JSON.parse(stored));
         }
         setLoading(false);
     }, []);
 
-    const login = (email, password) => {
-        const users = JSON.parse(localStorage.getItem('voltgrid_users') || '[]');
-        const found = users.find(
-            (u) => u.email === email && u.password === password
-        );
-        if (!found) return { success: false, message: 'Invalid email or password' };
-        if (found.isBlocked) return { success: false, message: 'Account blocked. Contact support.' };
-
-        const sessionUser = { ...found };
-        delete sessionUser.password;
-        localStorage.setItem('voltgrid_current_user', JSON.stringify(sessionUser));
-        setUser(sessionUser);
+    const login = async (email, password) => {
+        const apiUser = await loginUser(email, password);
+        if (!apiUser) return { success: false, message: 'Login failed. API unavailable.' };
+        if (apiUser.isBlocked) return { success: false, message: 'Account blocked. Contact support.' };
+        localStorage.setItem('catlink_current_user', JSON.stringify(apiUser));
+        setUser(apiUser);
         return { success: true };
     };
 
     const logout = () => {
-        localStorage.removeItem('voltgrid_current_user');
+        localStorage.removeItem('catlink_current_user');
         setUser(null);
     };
 
     const updateUsers = (updatedUsers) => {
-        localStorage.setItem('voltgrid_users', JSON.stringify(updatedUsers));
+        localStorage.setItem('catlink_users', JSON.stringify(updatedUsers));
     };
 
     return (

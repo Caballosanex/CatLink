@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
-import { MOCK_STATIONS } from '../../data/mockData';
+import { fetchStations } from '../../services/api';
 import { Zap, Users, Wifi, WifiOff, Filter, Brain } from 'lucide-react';
 import './StationMap.css';
 
@@ -53,14 +53,19 @@ export default function StationMap() {
     const [minPower, setMinPower] = useState(0);
     const [statusFilter, setStatusFilter] = useState('all');
     const [selected, setSelected] = useState(null);
+    const [stations, setStations] = useState([]);
 
-    const filtered = MOCK_STATIONS.filter(s => {
+    useEffect(() => {
+        fetchStations().then(setStations);
+    }, []);
+
+    const filtered = stations.filter(s => {
         if (s.power < minPower) return false;
         if (statusFilter !== 'all' && s.status !== statusFilter) return false;
         return true;
     });
 
-    const center = [40.7128, -74.006];
+    const center = [41.39, 2.17];
 
     return (
         <div className="map-shell">
@@ -94,7 +99,7 @@ export default function StationMap() {
                     </div>
                 </div>
                 <div className="filter-count">
-                    Showing <strong>{filtered.length}</strong> of {MOCK_STATIONS.length} stations
+                    Showing <strong>{filtered.length}</strong> of {stations.length} stations
                 </div>
             </div>
 

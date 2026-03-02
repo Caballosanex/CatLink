@@ -1,24 +1,35 @@
-import { useState } from 'react';
-import { MOCK_STATIONS, CITY_CONSUMPTION } from '../../data/mockData';
+import { useEffect, useState } from 'react';
+import { fetchStations } from '../../services/api';
 import { Zap, WifiOff, Activity, TrendingUp, ToggleLeft, ToggleRight, Cpu, Globe } from 'lucide-react';
 import './AdminDashboard.css';
 
+const BCN_CONSUMPTION = [
+    { city: 'Barcelona Centro', mwh: 312, stations: 3, population: 1620000 },
+    { city: 'Barcelona Norte', mwh: 198, stations: 2, population: 540000 },
+    { city: 'Barcelona Sur', mwh: 146, stations: 1, population: 320000 },
+];
+
 export default function AdminDashboard() {
     const [balancing, setBalancing] = useState(
-        localStorage.getItem('voltgrid_load_balancing') !== 'false'
+        localStorage.getItem('catlink_load_balancing') !== 'false'
     );
+    const [stations, setStations] = useState([]);
+
+    useEffect(() => {
+        fetchStations().then(setStations);
+    }, []);
     const toggleBalancing = () => {
         const next = !balancing;
         setBalancing(next);
-        localStorage.setItem('voltgrid_load_balancing', String(next));
+        localStorage.setItem('catlink_load_balancing', String(next));
     };
 
-    const total = MOCK_STATIONS.length;
-    const online = MOCK_STATIONS.filter(s => s.status !== 'offline').length;
-    const offline = MOCK_STATIONS.filter(s => s.status === 'offline').length;
-    const demand = MOCK_STATIONS.filter(s => s.status === 'high_demand').length;
-    const totalMwh = CITY_CONSUMPTION.reduce((a, c) => a + c.mwh, 0);
-    const maxMwh = Math.max(...CITY_CONSUMPTION.map(c => c.mwh));
+    const total = stations.length;
+    const online = stations.filter(s => s.status !== 'offline').length;
+    const offline = stations.filter(s => s.status === 'offline').length;
+    const demand = stations.filter(s => s.status === 'high_demand').length;
+    const totalMwh = BCN_CONSUMPTION.reduce((a, c) => a + c.mwh, 0);
+    const maxMwh = Math.max(...BCN_CONSUMPTION.map(c => c.mwh));
 
     return (
         <div className="page-content animate-fade-up">
@@ -64,7 +75,7 @@ export default function AdminDashboard() {
                         <Globe size={16} color="var(--color-primary)" />
                         <h3 className="section-title" style={{ marginBottom: 0 }}>Consumption by City</h3>
                     </div>
-                    {CITY_CONSUMPTION.map(c => (
+                    {BCN_CONSUMPTION.map(c => (
                         <div className="city-row" key={c.city}>
                             <div className="city-name">{c.city}</div>
                             <div className="city-bar-wrap">
