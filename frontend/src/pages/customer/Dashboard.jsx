@@ -145,7 +145,7 @@ export default function CustomerDashboard() {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid-3 animate-fade-up" style={{ animationDelay: '0.1s' }}>
+            <div className="grid-3 animate-fade-up grid_fix" style={{ animationDelay: '0.1s' }}>
                 <div className="card">
                     <div style={{ color: 'var(--color-text-muted)', fontSize: '0.78rem', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
                         <Activity size={14} />&nbsp;TOTAL SESSIONS
