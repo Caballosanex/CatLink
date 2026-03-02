@@ -45,7 +45,7 @@ function IncidentModal({ station, onClose }) {
                         </div>
                         <div className="form-group" style={{ marginBottom: '1.25rem' }}>
                             <label className="label">Notes</label>
-                            <textarea className="input-field" rows={3} placeholder="Describe the incident…"
+                            <textarea className="input-field unresizable-input-field" rows={3} placeholder="Describe the incident…"
                                 value={notes} onChange={e => setNotes(e.target.value)} />
                         </div>
                         <button className="btn btn-primary" style={{ width: '100%', justifyContent: 'center' }} onClick={submit}>
