@@ -160,6 +160,10 @@
 }
 
 /* History rows */
+.grid_fix {
+    margin-bottom: 16px;
+}
+
 .history-row {
     display: flex;
     align-items: center;
