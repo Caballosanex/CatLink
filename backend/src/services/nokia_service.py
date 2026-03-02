@@ -257,7 +257,7 @@ class NokiaService:
         """
         
         if self.mock_mode or self.client is None:
-            is_offline = phone == "+34900000003"
+            is_offline = phone == "+3672100003"
             
             return {
                 "connected": not is_offline,
@@ -342,6 +342,68 @@ class NokiaService:
         except Exception as e:
             print(f"Error in deactivate_qod: {e}")
             return {"deactivated": True, "error": str(e), "mock": True, "api": "qod"}
+
+    async def get_congestion(self, phone: str) -> dict:
+        """Get network congestion prediction for a device (charger IoT SIM).
+
+        Uses Nokia Congestion Insights API.
+        Returns the most recent congestion level and maps it to an occupancy %.
+        """
+
+        if self.mock_mode or self.client is None:
+            # Deterministic mock based on phone for variety
+            digit_sum = sum(int(c) for c in phone if c.isdigit()) % 4
+            levels = ["None", "Low", "Medium", "High"]
+            level = levels[digit_sum]
+            return {
+                "congestion_level": level,
+                "occupancy_pct": self._congestion_to_occupancy(level),
+                "phone": phone,
+                "mock": True,
+                "api": "congestion_insights"
+            }
+
+        try:
+            device = self.client.devices.get(phone_number=phone)
+            results = device.get_congestion()
+
+            if results:
+                # Take the first (most recent/upcoming) window
+                level = results[0].level  # "None", "Low", "Medium", "High"
+                confidence = results[0].confidence
+            else:
+                level = "Low"
+                confidence = None
+
+            return {
+                "congestion_level": level,
+                "occupancy_pct": self._congestion_to_occupancy(level),
+                "confidence": confidence,
+                "phone": phone,
+                "mock": False,
+                "api": "congestion_insights"
+            }
+        except Exception as e:
+            print(f"Error in get_congestion: {e}")
+            return {
+                "congestion_level": "Low",
+                "occupancy_pct": 30,
+                "phone": phone,
+                "error": str(e),
+                "mock": True,
+                "api": "congestion_insights"
+            }
+
+    @staticmethod
+    def _congestion_to_occupancy(level: str) -> int:
+        """Map Nokia congestion level to occupancy percentage."""
+        mapping = {
+            "None": 12,
+            "Low": 30,
+            "Medium": 58,
+            "High": 85,
+        }
+        return mapping.get(level, 40)
 
 
 # Singleton

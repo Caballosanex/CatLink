@@ -60,6 +60,14 @@ export function mapUser(u) {
   };
 }
 
+export async function refreshOccupancy() {
+  try {
+    await fetch(`${API_BASE}/chargers/refresh-occupancy`, { method: 'POST' }).then(toJson);
+  } catch (err) {
+    // Silently fail — occupancy will stay at last known value
+  }
+}
+
 export async function fetchStations() {
   try {
     const data = await fetch(`${API_BASE}/chargers`).then(toJson);

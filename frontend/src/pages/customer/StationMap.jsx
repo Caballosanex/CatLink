@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { fetchStations } from '../../services/api';
+import { fetchStations, refreshOccupancy } from '../../services/api';
 import { Zap, Users, Wifi, WifiOff, Filter, Brain } from 'lucide-react';
 import './StationMap.css';
 
@@ -66,7 +66,7 @@ export default function StationMap() {
     const [stations, setStations] = useState([]);
 
     useEffect(() => {
-        fetchStations().then(setStations);
+        refreshOccupancy().then(() => fetchStations()).then(setStations);
     }, []);
 
     const filtered = stations.filter(s => {

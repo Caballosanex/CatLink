@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { fetchStations, startChargingSession } from '../../services/api';
+import { fetchStations, startChargingSession, refreshOccupancy } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import {
     User, MapPin, Activity, CheckCircle, ChevronRight, Zap,
@@ -35,7 +35,7 @@ export default function Reservation() {
     const [locError, setLocError] = useState(null);
 
     useEffect(() => {
-        fetchStations().then((data) => {
+        refreshOccupancy().then(() => fetchStations()).then((data) => {
             setStations(data);
             const available = data.filter((s) => s.status !== 'offline');
             setSelectedStation(available[0] || data[0] || null);
