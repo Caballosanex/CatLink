@@ -61,22 +61,22 @@ export default function useWebSocket() {
 
   useEffect(() => {
     mountedRef.current = true;
-    // Delay connection slightly so React StrictMode's immediate
-    // unmount/remount cycle completes before the WebSocket is created.
-    const initTimer = setTimeout(connect, 50);
+    connect();
     return () => {
-      clearTimeout(initTimer);
       mountedRef.current = false;
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
       const ws = wsRef.current;
       if (ws) {
-        // Null handlers first to prevent reconnect/error callbacks
+        // Null all handlers so orphaned sockets can't trigger state updates
         ws.onopen = null;
         ws.onclose = null;
         ws.onerror = null;
         ws.onmessage = null;
-        // Close if OPEN or still CONNECTING (StrictMode double-mount)
-        if (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING) {
+        // Only close if fully OPEN — never close a CONNECTING socket
+        // (closing CONNECTING is what causes the browser console error).
+        // Orphaned CONNECTING sockets with nulled handlers will fail
+        // silently and get garbage collected.
+        if (ws.readyState === WebSocket.OPEN) {
           ws.close();
         }
         wsRef.current = null;
