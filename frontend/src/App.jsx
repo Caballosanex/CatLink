@@ -1,41 +1,48 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { useEffect } from 'react'
-import ChargerMap from './components/Map/ChargerMap'
-import AgentPanel from './components/Agent/AgentPanel'
-import { useStore } from './store/store'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import LoginPage from './pages/LoginPage';
+import CustomerLayout from './layouts/CustomerLayout';
+import AdminLayout from './layouts/AdminLayout';
+import './App.css';
 
-function App() {
-  const { connectWebSocket } = useStore()
-
-  useEffect(() => {
-    connectWebSocket()
-  }, [connectWebSocket])
-
-  return (
-    <BrowserRouter>
-      <div className="app">
-        <header className="app-header">
-          <h1>⚡ CatLink</h1>
-          <span className="subtitle">Carga Inteligente de VE</span>
-        </header>
-        
-        <main className="app-main">
-          <Routes>
-            <Route path="/" element={
-              <div className="main-layout">
-                <div className="map-container">
-                  <ChargerMap />
-                </div>
-                <div className="agent-container">
-                  <AgentPanel />
-                </div>
-              </div>
-            } />
-          </Routes>
-        </main>
-      </div>
-    </BrowserRouter>
-  )
+function AuthGuard({ role, children }) {
+  const { user, loading } = useAuth();
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh' }}>
+      <div className="spinner" />
+    </div>
+  );
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.role !== role) return <Navigate to={user.role === 'admin' ? '/admin' : '/customer'} replace />;
+  return children;
 }
 
-export default App
+function AppRoutes() {
+  const { user } = useAuth();
+  return (
+    <Routes>
+      <Route path="/login" element={
+        user
+          ? <Navigate to={user.role === 'admin' ? '/admin' : '/customer'} replace />
+          : <LoginPage />
+      } />
+      <Route path="/customer/*" element={
+        <AuthGuard role="customer"><CustomerLayout /></AuthGuard>
+      } />
+      <Route path="/admin/*" element={
+        <AuthGuard role="admin"><AdminLayout /></AuthGuard>
+      } />
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
+  );
+}
+
+export default function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+}
