@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.models import User, UserLogin, UserUpdateAdmin
+from src.models import User, UserLogin, UserUpdateAdmin, SessionResponse
 from src.services import (
     authenticate_user,
     get_all_users,
@@ -59,14 +59,10 @@ async def update_user_admin(
     return User(**payload)
 
 
-@router.get("/users/{user_id}/sessions")
+@router.get("/users/{user_id}/sessions", response_model=list[SessionResponse])
 async def get_user_sessions(user_id: str, db: AsyncSession = Depends(get_db)):
     sessions = await get_sessions_by_user(user_id, db)
     return [
-        {
-            k: v
-            for k, v in s.__dict__.items()
-            if not k.startswith("_")
-        }
+        SessionResponse(**{k: v for k, v in s.__dict__.items() if not k.startswith("_")})
         for s in sessions
     ]
