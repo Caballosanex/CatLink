@@ -131,10 +131,12 @@ export default function CustomerDashboard() {
                 <div className="battery-bar-wrap">
                     <div className="battery-bar-track">
                         <div className="battery-bar-fill" style={{ width: `${session?.batteryNow || 0}%` }}>
-                            <div className="battery-bar-target" style={{ left: `${session?.targetBattery || 0}%` }}>
-                                <div className="target-line" />
-                                <span className="target-label">{session?.targetBattery || 0}% target</span>
-                            </div>
+                            {(session?.targetBattery || 0) > 0 && (
+                                <div className="battery-bar-target" style={{ left: `${session.targetBattery}%` }}>
+                                    <div className="target-line" />
+                                    <span className="target-label">{session.targetBattery}% target</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                     <div className="battery-labels">
