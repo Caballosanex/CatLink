@@ -104,7 +104,8 @@ export default function Reservation() {
             user?.phone,
             userCoords.lat,
             userCoords.lon,
-            user?.id
+            user?.id,
+            demand
         );
         setSessionResult(result);
         setCharging(false);

@@ -9,8 +9,8 @@ import './Dashboard.css';
 
 // EV battery simulation constants
 const BATTERY_CAPACITY_KWH = 82;
-const BATTERY_START_PCT = 22;
-const TARGET_BATTERY_PCT = 80;
+const DEFAULT_BATTERY_START_PCT = 22;
+const DEFAULT_TARGET_BATTERY_PCT = 80;
 const PRICE_PER_KWH = 0.40;
 const CHARGE_EFFICIENCY = 0.9;
 
@@ -71,6 +71,10 @@ export default function CustomerDashboard() {
     useEffect(() => { loadSessions(); }, [user?.id]);
 
     const isLive = session?.status === 'approved';
+
+    // Use real values from session, fall back to defaults
+    const BATTERY_START_PCT = session?.batteryStart ?? DEFAULT_BATTERY_START_PCT;
+    const TARGET_BATTERY_PCT = session?.batteryTarget ?? DEFAULT_TARGET_BATTERY_PCT;
 
     // Compute live session fields from elapsed time
     const kwhSoFar = isLive ? Math.min(

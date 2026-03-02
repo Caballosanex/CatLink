@@ -19,6 +19,7 @@ async def create_session(request: StartSessionRequest, db: AsyncSession = Depend
             user_lat=request.user_lat,
             user_lon=request.user_lon,
             user_id=request.user_id,
+            battery_target=request.battery_target,
             db=db,
         )
         return session

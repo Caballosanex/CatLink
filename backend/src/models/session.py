@@ -25,6 +25,7 @@ class StartSessionRequest(BaseModel):
     user_lat: float
     user_lon: float
     user_id: Optional[str] = None
+    battery_target: Optional[int] = None
 
 
 class StopSessionRequest(BaseModel):
@@ -56,6 +57,8 @@ class SessionResponse(BaseModel):
     cost: Optional[float] = None
     price_per_kwh: Optional[float] = None
     duration_min: Optional[int] = None
+    battery_start: Optional[int] = None
+    battery_target: Optional[int] = None
     
     class Config:
         from_attributes = True
