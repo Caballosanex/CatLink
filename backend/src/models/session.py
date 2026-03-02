@@ -25,6 +25,7 @@ class StartSessionRequest(BaseModel):
     user_lat: float
     user_lon: float
     user_id: Optional[str] = None
+    battery_start: Optional[int] = None
     battery_target: Optional[int] = None
 
 

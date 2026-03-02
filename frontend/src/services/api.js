@@ -110,7 +110,8 @@ export async function startChargingSession(
   userLat,
   userLon,
   userId,
-  batteryTarget
+  batteryTarget,
+  batteryStart
 ) {
   try {
     const data = await fetch(`${API_BASE}/sessions/start`, {
@@ -122,6 +123,7 @@ export async function startChargingSession(
         user_lat: userLat,
         user_lon: userLon,
         user_id: userId,
+        battery_start: batteryStart || null,
         battery_target: batteryTarget || null,
       }),
     }).then(toJson);

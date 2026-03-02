@@ -12,7 +12,9 @@ export default function useWebSocket() {
   const mountedRef = useRef(true);
 
   const connect = useCallback(() => {
-    if (wsRef.current?.readyState === WebSocket.OPEN) return;
+    if (!mountedRef.current) return;
+    if (wsRef.current?.readyState === WebSocket.OPEN ||
+        wsRef.current?.readyState === WebSocket.CONNECTING) return;
 
     const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const url = `${proto}//${window.location.host}/ws`;
@@ -23,7 +25,6 @@ export default function useWebSocket() {
 
       ws.onopen = () => {
         if (mountedRef.current) setConnected(true);
-        // Clear any pending reconnect
         if (reconnectTimer.current) {
           clearTimeout(reconnectTimer.current);
           reconnectTimer.current = null;
@@ -44,16 +45,14 @@ export default function useWebSocket() {
       ws.onclose = () => {
         if (mountedRef.current) {
           setConnected(false);
-          // Auto-reconnect after 3s
           reconnectTimer.current = setTimeout(connect, 3000);
         }
       };
 
       ws.onerror = () => {
-        ws.close();
+        // Let onclose handle reconnection
       };
     } catch {
-      // Schedule reconnect on connection failure
       if (mountedRef.current) {
         reconnectTimer.current = setTimeout(connect, 3000);
       }
@@ -66,7 +65,16 @@ export default function useWebSocket() {
     return () => {
       mountedRef.current = false;
       if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
-      if (wsRef.current) wsRef.current.close();
+      const ws = wsRef.current;
+      if (ws) {
+        // Prevent onclose from triggering reconnect
+        ws.onclose = null;
+        ws.onerror = null;
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+        wsRef.current = null;
+      }
     };
   }, [connect]);
 

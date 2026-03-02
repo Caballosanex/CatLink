@@ -27,12 +27,15 @@ export default function Reservation() {
     const [locDone, setLocDone] = useState(false);
     const [stations, setStations] = useState([]);
     const [selectedStation, setSelectedStation] = useState(null);
-    const [demand, setDemand] = useState(60);
+    const [demand, setDemand] = useState(80);
     const [charging, setCharging] = useState(false);
     const [done, setDone] = useState(false);
     const [sessionResult, setSessionResult] = useState(null);
     const [userCoords, setUserCoords] = useState({ lat: 41.387, lon: 2.17 });
     const [locError, setLocError] = useState(null);
+
+    // Simulate car-reported battery level (random 15-40%) — generated once on mount
+    const [batteryStart] = useState(() => Math.floor(Math.random() * 26) + 15);
 
     useEffect(() => {
         refreshOccupancy().then(() => fetchStations()).then((data) => {
@@ -42,7 +45,6 @@ export default function Reservation() {
         });
     }, []);
 
-    const batteryStart = 22;
     const kwhNeeded = ((demand - batteryStart) / 100 * 82);
     const minutes = selectedStation ? Math.round((kwhNeeded / selectedStation.power) * 60) : 0;
     const demandMultiplier = selectedStation?.status === 'high_demand' ? 1.4 : 1.0;
@@ -105,7 +107,8 @@ export default function Reservation() {
             userCoords.lat,
             userCoords.lon,
             user?.id,
-            demand
+            demand,
+            batteryStart
         );
         setSessionResult(result);
         setCharging(false);
@@ -263,13 +266,16 @@ export default function Reservation() {
             {step === 2 && (
                 <div className="step-card card animate-fade-up">
                     <div className="step-card-header"><Activity size={20} color="var(--color-primary)" /><h3>Demand Calculation</h3></div>
+                    <div style={{ marginBottom: '0.75rem', padding: '0.6rem 0.85rem', background: 'rgba(255,255,255,0.03)', borderRadius: 8, fontSize: '0.82rem', color: 'var(--color-text-muted)' }}>
+                        Current battery level: <strong style={{ color: 'var(--color-primary)' }}>{batteryStart}%</strong> <span style={{ opacity: 0.5 }}>(reported by vehicle)</span>
+                    </div>
                     <div style={{ marginBottom: '1.5rem' }}>
                         <label className="label">Target Battery Level: <strong style={{ color: 'var(--color-primary)' }}>{demand}%</strong></label>
-                        <input type="range" min="30" max="100" step="5"
+                        <input type="range" min={batteryStart + 10} max="100" step="5"
                             value={demand} onChange={e => setDemand(+e.target.value)}
                             className="power-slider" style={{ width: '100%', marginTop: 8 }} />
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.72rem', color: 'var(--color-text-muted)', marginTop: 4 }}>
-                            <span>30%</span><span>100%</span>
+                            <span>{batteryStart + 10}%</span><span>100%</span>
                         </div>
                     </div>
 
@@ -310,6 +316,7 @@ export default function Reservation() {
                          <div className="confirm-row"><span>Station</span><strong>{selectedStation?.name}</strong></div>
                         <div className="confirm-row"><span>Driver</span><strong>{user?.name}</strong></div>
                         <div className="confirm-row"><span>Vehicle</span><strong>{user?.vehicle}</strong></div>
+                        <div className="confirm-row"><span>Current Battery</span><strong>{batteryStart}%</strong></div>
                         <div className="confirm-row"><span>Target Battery</span><strong>{demand}%</strong></div>
                         <div className="confirm-row"><span>Energy</span><strong>{kwhNeeded.toFixed(1)} kWh</strong></div>
                         <div className="confirm-row"><span>Est. Time</span><strong>{minutes} minutes</strong></div>
