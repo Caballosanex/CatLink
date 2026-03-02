@@ -51,11 +51,17 @@ async def seed_if_empty() -> None:
         with open(USERS_PATH, "r") as f:
             users = json.load(f)
 
+        # Override phones for demo: map user IDs to real SIM numbers
+        _demo_phones = {
+            "USR-001": "+34640031451",   # Maria → real SIM for APPROVE flow
+            "USR-002": "+3672123456",    # Fraud test → Nokia simulator for REJECT flow
+        }
+
         for u in users:
             session.add(UserDB(
                 id=u["id"],
                 name=u["name"],
-                phone=u["phone"],
+                phone=_demo_phones.get(u["id"], u["phone"]),
                 email=u["email"],
                 password="password123",
                 vehicle=u["vehicle"],

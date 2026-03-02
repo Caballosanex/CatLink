@@ -5,6 +5,7 @@ import CustomerDashboard from '../pages/customer/Dashboard';
 import StationMap from '../pages/customer/StationMap';
 import Reservation from '../pages/customer/Reservation';
 import History from '../pages/customer/History';
+import AgentPanel from '../components/AgentPanel';
 import './CustomerLayout.css';
 
 const NAV_ITEMS = [
@@ -63,6 +64,9 @@ export default function CustomerLayout() {
                     </NavLink>
                 ))}
             </nav>
+
+            {/* AI Agent Panel — floating overlay */}
+            <AgentPanel />
         </div>
     );
 }
