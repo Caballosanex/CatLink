@@ -15,3 +15,6 @@ __pycache__/
 *.pyc
 .venv/
 backend/venv/
+
+# SQLite database (re-seeded on startup)
+backend/catlink.db
