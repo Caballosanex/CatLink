@@ -1,12 +1,6 @@
-import os
 from datetime import datetime, timedelta
 from math import radians, sin, cos, sqrt, atan2
-from typing import Optional
-import httpx
-
-# Configuration
-MOCK_MODE = os.getenv("NOKIA_MOCK_MODE", "false").lower() == "true"
-NOKIA_API_TOKEN = os.getenv("NOKIA_API_TOKEN", "")
+from src.config.settings import settings
 
 # Mock fraud numbers for testing
 FRAUD_NUMBERS = ["+34666666666", "+34699999999"]
@@ -14,18 +8,18 @@ FRAUD_NUMBERS = ["+34666666666", "+34699999999"]
 
 class NokiaService:
     """Servicio para interactuar con Nokia Network as Code APIs.
-    
+
     Soporta tanto modo real (con SIMs de operadores) como modo mock.
     """
-    
+
     def __init__(self):
-        self.mock_mode = MOCK_MODE
+        self.mock_mode = settings.nokia_mock_mode
         self.client = None
-        
-        if not self.mock_mode and NOKIA_API_TOKEN:
+
+        if not self.mock_mode and settings.nokia_api_token:
             try:
                 from network_as_code import NetworkAsCodeClient
-                self.client = NetworkAsCodeClient(token=NOKIA_API_TOKEN)
+                self.client = NetworkAsCodeClient(token=settings.nokia_api_token)
                 print("Nokia SDK initialized - REAL MODE")
             except ImportError:
                 print("WARNING: network-as-code SDK not installed, falling back to mock")

@@ -11,18 +11,27 @@ from src.websocket.manager import manager
 
 class CatLinkAgent:
     """Agente IA para evaluar solicitudes de carga usando Gemini."""
-    
+
     def __init__(self):
+        self.model = None
+        self._initialized = False
+
+    def _ensure_initialized(self):
+        """Lazy init: configura Gemini solo cuando se necesita."""
+        if self._initialized:
+            return
+
         api_key = os.getenv("GEMINI_API_KEY")
         if not api_key:
-            raise ValueError("GEMINI_API_KEY not set")
-        
+            raise ValueError("GEMINI_API_KEY not set. Set it in .env or environment.")
+
         genai.configure(api_key=api_key)
         self.model = genai.GenerativeModel(
             model_name="gemini-1.5-flash",
             system_instruction=SYSTEM_PROMPT,
             tools=GEMINI_TOOLS
         )
+        self._initialized = True
     
     async def evaluate_charge_request(
         self,
@@ -33,10 +42,12 @@ class CatLinkAgent:
     ) -> dict:
         """Evalúa una solicitud de carga usando Gemini."""
         
+        self._ensure_initialized()
+
         start_time = time.time()
         logs = []
         qod_session_id = None
-        
+
         # Notificar inicio
         await manager.broadcast({
             "type": "agent_log",
