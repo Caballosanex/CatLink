@@ -2,39 +2,118 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { fetchSessions } from '../../services/api';
 import { Zap, Clock, DollarSign, Download, BarChart3, Calendar } from 'lucide-react';
+import { jsPDF } from 'jspdf';
 import './History.css';
 
 function downloadInvoice(session) {
-    const text = [
-        '=======================================',
-        '           CATLINK — INVOICE           ',
-        '=======================================',
-        '',
-        `Session ID  : ${session.id.toUpperCase()}`,
-        `Station     : ${session.stationName}`,
-        `Date        : ${new Date(session.startTime).toLocaleDateString('en-US', { dateStyle: 'long' })}`,
-        `Start Time  : ${new Date(session.startTime).toLocaleTimeString()}`,
-        `End Time    : ${session.endTime ? new Date(session.endTime).toLocaleTimeString() : '-'}`,
-        `Duration    : ${session.duration || 0} minutes`,
-        '',
-        '--------------------------------------',
-        `Energy Used : ${session.kwhConsumed || 0} kWh`,
-        `Unit Price  : $${session.pricePerKwh || 0}/kWh`,
-        '--------------------------------------',
-        `TOTAL COST  : $${(session.cost || 0).toFixed(2)}`,
-        '======================================',
-        '',
-        'Powered by CatLink · Nokia Network as Code',
-        'Thank you for charging with us!',
-    ].join('\n');
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const W = doc.internal.pageSize.getWidth();
+    const margin = 20;
+    let y = 25;
 
-    const blob = new Blob([text], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `catlink-invoice-${session.id}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
+    // ── Header bar ──
+    doc.setFillColor(20, 184, 166); // teal-500
+    doc.rect(0, 0, W, 38, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(22);
+    doc.setTextColor(255, 255, 255);
+    doc.text('CATLINK', margin, 18);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Intelligent EV Charging · Nokia Network as Code', margin, 28);
+
+    // ── Invoice title ──
+    y = 50;
+    doc.setTextColor(30, 30, 30);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.text('CHARGING INVOICE', margin, y);
+
+    // ── Invoice meta (right aligned) ──
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.setTextColor(100, 100, 100);
+    const dateStr = new Date(session.startTime).toLocaleDateString('en-US', { dateStyle: 'long' });
+    doc.text(`Date: ${dateStr}`, W - margin, y - 6, { align: 'right' });
+    doc.text(`Invoice #: ${session.id.toUpperCase()}`, W - margin, y, { align: 'right' });
+
+    // ── Divider ──
+    y += 8;
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, W - margin, y);
+
+    // ── Session details ──
+    y += 12;
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(10);
+
+    const details = [
+        ['Station', session.stationName || '-'],
+        ['Start Time', session.startTime ? new Date(session.startTime).toLocaleString() : '-'],
+        ['End Time', session.endTime ? new Date(session.endTime).toLocaleString() : '-'],
+        ['Duration', `${session.duration || 0} minutes`],
+    ];
+
+    for (const [label, value] of details) {
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${label}:`, margin, y);
+        doc.setFont('helvetica', 'normal');
+        doc.text(value, margin + 40, y);
+        y += 7;
+    }
+
+    // ── Billing table ──
+    y += 6;
+    // Table header
+    doc.setFillColor(245, 245, 245);
+    doc.rect(margin, y - 5, W - margin * 2, 9, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(80, 80, 80);
+    doc.text('Description', margin + 3, y);
+    doc.text('Quantity', W / 2, y, { align: 'center' });
+    doc.text('Amount', W - margin - 3, y, { align: 'right' });
+
+    // Table row
+    y += 10;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(30, 30, 30);
+    doc.setFontSize(10);
+    doc.text('EV Charging Energy', margin + 3, y);
+    doc.text(`${(session.kwhConsumed || 0).toFixed(1)} kWh`, W / 2, y, { align: 'center' });
+    doc.text(`€${(session.cost || 0).toFixed(2)}`, W - margin - 3, y, { align: 'right' });
+
+    // Unit price row
+    y += 7;
+    doc.setFontSize(8);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`@ €${session.pricePerKwh || 0}/kWh`, margin + 3, y);
+
+    // ── Total ──
+    y += 10;
+    doc.setDrawColor(20, 184, 166);
+    doc.setLineWidth(0.8);
+    doc.line(W / 2 + 10, y, W - margin, y);
+    y += 8;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.setTextColor(20, 184, 166);
+    doc.text('TOTAL', W / 2 + 10, y);
+    doc.text(`€${(session.cost || 0).toFixed(2)}`, W - margin - 3, y, { align: 'right' });
+
+    // ── Footer ──
+    const footerY = doc.internal.pageSize.getHeight() - 20;
+    doc.setDrawColor(220, 220, 220);
+    doc.setLineWidth(0.3);
+    doc.line(margin, footerY - 5, W - margin, footerY - 5);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text('Powered by CatLink · Nokia Network as Code · Open Gateway Hackathon 2026', W / 2, footerY, { align: 'center' });
+    doc.text('Thank you for charging with us!', W / 2, footerY + 5, { align: 'center' });
+
+    doc.save(`catlink-invoice-${session.id}.pdf`);
 }
 
 export default function History() {
@@ -72,7 +151,7 @@ export default function History() {
                         <DollarSign size={20} />
                     </div>
                     <div>
-                        <div className="stat-value">${totalCost.toFixed(2)}</div>
+                        <div className="stat-value">€{totalCost.toFixed(2)}</div>
                         <div className="stat-label">Total Spent</div>
                     </div>
                 </div>
@@ -138,9 +217,9 @@ export default function History() {
                                     </td>
                                     <td>
                                         <span style={{ fontFamily: 'var(--font-display)', fontWeight: 700, color: 'var(--color-primary)' }}>
-                                            ${(s.cost || 0).toFixed(2)}
+                                            €{(s.cost || 0).toFixed(2)}
                                         </span>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>${s.pricePerKwh || 0}/kWh</div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)' }}>€{s.pricePerKwh || 0}/kWh</div>
                                     </td>
                                     <td>
                                         <button className="btn btn-outline btn-sm" onClick={() => downloadInvoice(s)}>
