@@ -1,3 +1,4 @@
+import logging
 import random
 import uuid
 from datetime import datetime
@@ -10,6 +11,8 @@ from src.db_models import SessionDB
 from src.models import SessionResponse, SessionStatus, AgentDecision, AgentLogEntry
 from src.services.charger_service import get_charger_by_id
 from src.agent.agent import agent
+
+logger = logging.getLogger(__name__)
 
 
 async def start_session(
@@ -54,9 +57,7 @@ async def start_session(
             user_lon=user_lon,
         )
     except Exception as e:
-        import traceback
-        print(f"[AGENT ERROR] {e}")
-        traceback.print_exc()
+        logger.error("Agent evaluation failed: %s", e)
         result = {
             "decision": AgentDecision.APPROVE.value,
             "reason": "Agent unavailable, auto-approved for demo",

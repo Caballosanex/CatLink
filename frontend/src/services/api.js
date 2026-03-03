@@ -1,4 +1,6 @@
 
+import { showToast } from '../components/Toast';
+
 const API_BASE = '/api';
 
 function toJson(response) {
@@ -75,6 +77,7 @@ export async function fetchStations() {
     const data = await fetch(`${API_BASE}/chargers`).then(toJson);
     return data.map(mapCharger);
   } catch (err) {
+    showToast('Failed to load stations', 'error');
     return [];
   }
 }
@@ -87,6 +90,7 @@ export async function fetchSessions(userId) {
     const data = await fetch(url).then(toJson);
     return data.map(mapSession);
   } catch (err) {
+    showToast('Failed to load charging history', 'error');
     return [];
   }
 }
@@ -100,6 +104,7 @@ export async function loginUser(email, password) {
     }).then(toJson);
     return mapUser(data);
   } catch (err) {
+    showToast('Login failed. Check your credentials.', 'error');
     return null;
   }
 }
@@ -127,8 +132,10 @@ export async function startChargingSession(
         battery_target: batteryTarget || null,
       }),
     }).then(toJson);
+    showToast('Charging session started!', 'success');
     return mapSession(data);
   } catch (err) {
+    showToast('Failed to start charging session', 'error');
     const fallback = {
       id: `ses_${Math.random().toString(16).slice(2, 8)}`,
       userId,
@@ -150,8 +157,10 @@ export async function stopChargingSession(sessionId) {
     const data = await fetch(`${API_BASE}/sessions/${sessionId}/stop`, {
       method: 'POST',
     }).then(toJson);
+    showToast('Charging session stopped', 'success');
     return mapSession(data);
   } catch (err) {
+    showToast('Failed to stop charging session', 'error');
     return null;
   }
 }
@@ -161,6 +170,7 @@ export async function fetchUsers() {
     const data = await fetch(`${API_BASE}/users`).then(toJson);
     return data.map(mapUser);
   } catch (err) {
+    showToast('Failed to load users', 'error');
     return [];
   }
 }
@@ -178,6 +188,7 @@ export async function updateUser(userId, updates) {
     }).then(toJson);
     return mapUser(data);
   } catch (err) {
+    showToast('Failed to update user', 'error');
     return null;
   }
 }
