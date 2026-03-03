@@ -14,15 +14,23 @@ export default function LoginPage() {
     const { login } = useAuth();
     const navigate = useNavigate();
 
+    const [fieldErrors, setFieldErrors] = useState({ email: '', password: '' });
+
     const fillDemo = (r) => {
         setRole(r);
         setEmail(r === 'admin' ? 'admin@catlink.io' : 'maria@example.com');
         setPassword(r === 'admin' ? 'admin123' : 'password123');
         setError('');
+        setFieldErrors({ email: '', password: '' });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const errors = { email: '', password: '' };
+        if (!email.trim()) errors.email = 'Please enter your email';
+        if (!password.trim()) errors.password = 'Please enter your password';
+        setFieldErrors(errors);
+        if (errors.email || errors.password) return;
         setError('');
         setLoading(true);
         await new Promise((r) => setTimeout(r, 800));
@@ -77,20 +85,20 @@ export default function LoginPage() {
                     </div>
 
                     {/* Form */}
-                    <form onSubmit={handleSubmit} className="login-form">
+                    <form onSubmit={handleSubmit} className="login-form" noValidate>
                         <div className="form-group">
                             <label className="label">Email</label>
                             <div className="input-icon-wrap">
                                 <Mail size={16} className="input-icon" />
                                 <input
                                     type="email"
-                                    className="input-field input-with-icon"
+                                    className={`input-field input-with-icon${fieldErrors.email ? ' input-error' : ''}`}
                                     placeholder={role === 'admin' ? 'admin@catlink.io' : 'maria@example.com'}
                                     value={email}
-                                    onChange={(e) => setEmail(e.target.value)}
-                                    required
+                                    onChange={(e) => { setEmail(e.target.value); setFieldErrors(prev => ({ ...prev, email: '' })); }}
                                 />
                             </div>
+                            {fieldErrors.email && <span className="field-error"><AlertCircle size={13} />{fieldErrors.email}</span>}
                         </div>
                         <div className="form-group">
                             <label className="label">Password</label>
@@ -98,11 +106,10 @@ export default function LoginPage() {
                                 <Lock size={16} className="input-icon" />
                                 <input
                                     type={showPassword ? 'text' : 'password'}
-                                    className="input-field input-with-icon input-with-toggle"
+                                    className={`input-field input-with-icon input-with-toggle${fieldErrors.password ? ' input-error' : ''}`}
                                     placeholder={showPassword ? 'password' : '••••••••'}
                                     value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    required
+                                    onChange={(e) => { setPassword(e.target.value); setFieldErrors(prev => ({ ...prev, password: '' })); }}
                                 />
                                 <button
                                     type="button"
@@ -113,6 +120,7 @@ export default function LoginPage() {
                                     {showPassword ? <Eye size={16} /> : <EyeOff size={16} />}
                                 </button>
                             </div>
+                            {fieldErrors.password && <span className="field-error"><AlertCircle size={13} />{fieldErrors.password}</span>}
                         </div>
 
                         {error && (
