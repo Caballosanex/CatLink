@@ -49,3 +49,12 @@ class UserUpdateAdmin(BaseModel):
     is_blocked: Optional[bool] = None
     is_suspended: Optional[bool] = None
     risk_level: Optional[RiskLevel] = None
+
+
+class UserRegister(BaseModel):
+    name: str
+    email: str
+    password: str
+    phone: str
+    vehicle: str
+    vehicle_plate: str

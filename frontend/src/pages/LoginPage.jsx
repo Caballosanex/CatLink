@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Zap, Shield, User, Lock, Mail, AlertCircle, ChevronRight, Eye, EyeOff } from 'lucide-react';
+import RegisterModal from '../components/RegisterModal';
 import './LoginPage.css';
 
 export default function LoginPage() {
@@ -11,6 +12,7 @@ export default function LoginPage() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showPassword, setShowPassword] = useState(false);
+    const [showRegister, setShowRegister] = useState(false);
     const { login } = useAuth();
     const navigate = useNavigate();
 
@@ -150,12 +152,19 @@ export default function LoginPage() {
                             </button>
                         </div>
                     </div>
+
+                    <p className="register-link">
+                        Don&apos;t have an account?{' '}
+                        <button type="button" className="link-btn" onClick={() => setShowRegister(true)}>Create one</button>
+                    </p>
                 </div>
 
                 <p className="login-footer">
                     Secured with 5G · Nokia Network as Code · AI Fraud Shield
                 </p>
             </div>
+
+            <RegisterModal open={showRegister} onClose={() => setShowRegister(false)} />
         </div>
     );
 }

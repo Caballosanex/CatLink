@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import uuid
+from datetime import date
 from typing import Optional
 
 from sqlalchemy import select
@@ -37,6 +39,30 @@ async def update_user(user_id: str, updates: dict, db: AsyncSession) -> Optional
     for key, value in updates.items():
         if value is not None and hasattr(user, key):
             setattr(user, key, value)
+    await db.commit()
+    await db.refresh(user)
+    return user
+
+
+async def create_user(data: dict, db: AsyncSession) -> UserDB:
+    user = UserDB(
+        id=str(uuid.uuid4()),
+        name=data["name"],
+        email=data["email"],
+        password=data["password"],
+        phone=data["phone"],
+        vehicle=data["vehicle"],
+        vehicle_plate=data["vehicle_plate"],
+        avatar="\U0001F464",
+        role="customer",
+        verification_status="pending",
+        risk_level="low",
+        is_blocked=False,
+        is_suspended=False,
+        is_fraud_test=False,
+        join_date=date.today().isoformat(),
+    )
+    db.add(user)
     await db.commit()
     await db.refresh(user)
     return user

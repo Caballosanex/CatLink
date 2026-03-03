@@ -1,0 +1,107 @@
+/* ── Modal overlay ── */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+}
+
+/* ── Modal card ── */
+.modal-container {
+    position: relative;
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: var(--radius-xl);
+    padding: 2rem;
+    box-shadow: var(--shadow-lg);
+}
+
+.modal-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    background: var(--color-surface-2);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.modal-close:hover {
+    color: var(--color-text);
+    border-color: var(--color-text-muted);
+}
+
+.modal-title {
+    font-family: var(--font-display);
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 0.2rem;
+}
+
+.modal-subtitle {
+    font-size: 0.85rem;
+    color: var(--color-text-muted);
+    margin-bottom: 1.25rem;
+}
+
+/* ── Register form ── */
+.register-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+}
+
+/* ── Success state ── */
+.register-success {
+    text-align: center;
+    padding: 1rem 0;
+}
+
+.success-icon {
+    color: var(--color-green, #00c853);
+    margin-bottom: 1rem;
+    display: flex;
+    justify-content: center;
+}
+
+.register-success h3 {
+    font-family: var(--font-display);
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin-bottom: 0.5rem;
+}
+
+.register-success p {
+    font-size: 0.9rem;
+    color: var(--color-text-muted);
+}
+
+/* ── Scrollbar ── */
+.modal-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.modal-container::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 3px;
+}

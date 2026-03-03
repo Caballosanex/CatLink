@@ -2,12 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
-from src.models import User, UserLogin, UserUpdateAdmin, SessionResponse
+from src.models import User, UserLogin, UserRegister, UserUpdateAdmin, SessionResponse
 from src.services import (
     authenticate_user,
+    create_user,
     get_all_users,
     get_sessions_by_user,
     get_user_by_id,
+    get_user_by_email,
     update_user,
 )
 
@@ -19,6 +21,17 @@ async def login(request: UserLogin, db: AsyncSession = Depends(get_db)):
     user = await authenticate_user(request.email, request.password, db)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    payload = {k: v for k, v in user.__dict__.items() if not k.startswith("_")}
+    payload["password"] = None
+    return User(**payload)
+
+
+@router.post("/auth/register", response_model=User, status_code=201)
+async def register(request: UserRegister, db: AsyncSession = Depends(get_db)):
+    existing = await get_user_by_email(request.email, db)
+    if existing:
+        raise HTTPException(status_code=409, detail="Email already registered")
+    user = await create_user(request.model_dump(), db)
     payload = {k: v for k, v in user.__dict__.items() if not k.startswith("_")}
     payload["password"] = None
     return User(**payload)

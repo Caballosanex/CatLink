@@ -8,7 +8,7 @@ from .session import (
     SessionResponse
 )
 from .user import User
-from .user import UserLogin, UserRole, UserUpdateAdmin, VerificationStatus, RiskLevel
+from .user import UserLogin, UserRole, UserUpdateAdmin, UserRegister, VerificationStatus, RiskLevel
 
 __all__ = [
     "Charger",
@@ -25,6 +25,7 @@ __all__ = [
     "UserLogin",
     "UserRole",
     "UserUpdateAdmin",
+    "UserRegister",
     "VerificationStatus",
     "RiskLevel",
 ]

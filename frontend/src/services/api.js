@@ -109,6 +109,19 @@ export async function loginUser(email, password) {
   }
 }
 
+export async function registerUser({ name, email, password, phone, vehicle, vehicle_plate }) {
+  const res = await fetch(`${API_BASE}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name, email, password, phone, vehicle, vehicle_plate }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.detail || `Registration failed (${res.status})`);
+  }
+  return mapUser(await res.json());
+}
+
 export async function startChargingSession(
   chargerId,
   userPhone,

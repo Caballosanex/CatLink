@@ -274,3 +274,25 @@
     text-align: center;
     letter-spacing: 0.04em;
 }
+
+.register-link {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--color-text-muted);
+    margin-top: 1rem;
+}
+
+.link-btn {
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    font-weight: 600;
+    cursor: pointer;
+    font-size: inherit;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.link-btn:hover {
+    text-decoration: underline;
+}
