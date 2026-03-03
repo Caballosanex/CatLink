@@ -117,12 +117,19 @@ export default function CustomerDashboard() {
         }
     };
 
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning';
+        if (hour < 18) return 'Good afternoon';
+        return 'Good evening';
+    };
+
     return (
         <div className="page-content animate-fade-up">
             <div className="dash-header">
                 <div>
                     <h2 className="section-title" style={{ fontSize: '1.4rem', marginBottom: 4 }}>
-                        Good evening, {user?.name?.split(' ')[0]} 👋
+                        {getGreeting()}, {user?.name?.split(' ')[0]}
                     </h2>
                     <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem' }}>
                         {new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
