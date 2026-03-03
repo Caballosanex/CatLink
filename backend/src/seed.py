@@ -8,6 +8,7 @@ from sqlalchemy import select
 
 from src.database import AsyncSessionLocal
 from src.db_models import ChargerDB, SessionDB, UserDB
+from src.services.security import get_password_hash
 
 
 DATA_DIR = Path(__file__).parent.parent / "data"
@@ -63,7 +64,7 @@ async def seed_if_empty() -> None:
                 name=u["name"],
                 phone=_demo_phones.get(u["id"], u["phone"]),
                 email=u["email"],
-                password="password123",
+                password=get_password_hash("password123"),
                 vehicle=u["vehicle"],
                 vehicle_plate="BCN-0000",
                 avatar=_make_avatar(u["name"]),
@@ -81,7 +82,7 @@ async def seed_if_empty() -> None:
             name="CatLink Admin",
             phone="+34911111111",
             email="admin@catlink.io",
-            password="admin123",
+            password=get_password_hash("admin123"),
             vehicle="",
             vehicle_plate="",
             avatar="CA",

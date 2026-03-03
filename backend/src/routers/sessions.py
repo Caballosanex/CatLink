@@ -1,17 +1,24 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from typing import List
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from src.database import get_db
 from src.models import StartSessionRequest, SessionResponse
 from src.services import start_session, get_all_sessions, get_session_by_id, stop_session
+from src.services.nokia_service import nokia_service
 
 router = APIRouter()
 
 
 @router.post("/start", response_model=SessionResponse)
-async def create_session(request: StartSessionRequest, db: AsyncSession = Depends(get_db)):
+async def create_session(request: StartSessionRequest, raw_request: Request, db: AsyncSession = Depends(get_db)):
     """Inicia una sesión de carga (evaluada por el agente IA)."""
+    # Capture client IP for QoD session creation
+    client_ip = raw_request.headers.get("x-forwarded-for", "").split(",")[0].strip()
+    if not client_ip:
+        client_ip = raw_request.client.host if raw_request.client else None
+    nokia_service._current_client_ip = client_ip
+    
     try:
         session = await start_session(
             charger_id=request.charger_id,

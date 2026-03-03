@@ -1,10 +1,5 @@
-from datetime import datetime, timedelta
 from math import radians, sin, cos, sqrt, atan2
 from src.config.settings import settings
-
-# Mock fraud numbers for testing
-FRAUD_NUMBERS = ["+34666666666", "+34699999999"]
-
 
 class NokiaService:
     """Servicio para interactuar con Nokia Network as Code APIs.
@@ -15,6 +10,7 @@ class NokiaService:
     def __init__(self):
         self.mock_mode = settings.nokia_mock_mode
         self.client = None
+        self._current_client_ip = None
 
         if not self.mock_mode and settings.nokia_api_token:
             try:
@@ -51,7 +47,7 @@ class NokiaService:
         target_lon: float,
         user_lat: float,
         user_lon: float,
-        radius_m: int = 100
+        radius_m: int = 1500
     ) -> dict:
         """Verifica si el usuario está en la ubicación del cargador.
         
@@ -157,12 +153,10 @@ class NokiaService:
         """
         
         if self.mock_mode or self.client is None:
-            is_fraud = phone in FRAUD_NUMBERS
-            
             return {
-                "swapped_recently": is_fraud,
-                "last_swap_date": (datetime.now() - timedelta(hours=2)).isoformat() if is_fraud else None,
-                "risk_level": "high" if is_fraud else "low",
+                "swapped_recently": False,
+                "last_swap_date": None,
+                "risk_level": "low",
                 "mock": True,
                 "api": "sim_swap"
             }
@@ -188,72 +182,19 @@ class NokiaService:
             }
         except Exception as e:
             print(f"Error in check_sim_swap: {e}")
-            # Check if it's a known fraud number in mock
-            is_fraud = phone in FRAUD_NUMBERS
             return {
-                "swapped_recently": is_fraud,
+                "swapped_recently": False,
                 "last_swap_date": None,
-                "risk_level": "high" if is_fraud else "low",
+                "risk_level": "low",
                 "error": str(e),
                 "mock": True,
                 "api": "sim_swap"
             }
     
-    async def get_population_density(self, lat: float, lon: float) -> dict:
-        """Obtiene densidad de población en una zona.
-        
-        Uses Nokia Population Density Insights API.
-        """
-        
-        if self.mock_mode or self.client is None:
-            distance_to_center = self._calculate_distance(lat, lon, 41.3900, 2.1700)
-            
-            if distance_to_center < 2000:
-                category = "high"
-                density = 850
-            elif distance_to_center < 5000:
-                category = "medium"
-                density = 450
-            else:
-                category = "low"
-                density = 150
-            
-            return {
-                "density": density,
-                "category": category,
-                "mock": True,
-                "api": "population_density"
-            }
-        
-        try:
-            # Note: Population density might be under Insights namespace
-            # Adjust based on actual SDK structure
-            from network_as_code import Insights
-            result = Insights.get_population_density(
-                latitude=lat,
-                longitude=lon,
-                radius=500
-            )
-            return {
-                "density": result.density,
-                "category": result.category,
-                "mock": False,
-                "api": "population_density"
-            }
-        except Exception as e:
-            print(f"Error in get_population_density: {e}")
-            return {
-                "density": 500,
-                "category": "medium",
-                "error": str(e),
-                "mock": True,
-                "api": "population_density"
-            }
-    
     async def check_device_status(self, phone: str) -> dict:
         """Verifica estado de conectividad de un dispositivo.
         
-        Uses Nokia Device Status API.
+        Uses Nokia Device Reachability Status API.
         """
         
         if self.mock_mode or self.client is None:
@@ -268,11 +209,26 @@ class NokiaService:
         
         try:
             device = self.client.devices.get(phone_number=phone)
-            result = device.get_connectivity()
+            status = device.get_reachability()
+            
+            # status.reachable: bool
+            # status.connectivity: list e.g. ["DATA", "SMS"] or None
+            # status.last_status_time: datetime or str
+            connectivity = status.connectivity or []
+            has_data = "DATA" in connectivity
+            
+            # Derive network_type from connectivity capabilities
+            if has_data:
+                network_type = "5G"
+            elif connectivity:
+                network_type = "SMS_ONLY"
+            else:
+                network_type = None
             
             return {
-                "connected": result.connected if hasattr(result, 'connected') else True,
-                "network_type": result.network_type if hasattr(result, 'network_type') else "5G",
+                "connected": status.reachable,
+                "network_type": network_type,
+                "connectivity": connectivity,
                 "mock": False,
                 "api": "device_status"
             }
@@ -289,7 +245,9 @@ class NokiaService:
     async def activate_qod(self, phone: str, profile: str = "QOS_L") -> dict:
         """Activa Quality on Demand.
         
-        Uses Nokia QoD API.
+        Uses Nokia QoD API. Requires device IPv4 + application server IPv4.
+        We provide the device IP via the stored client IP (or a placeholder)
+        and point service_ipv4 to our backend.
         """
         
         if self.mock_mode or self.client is None:
@@ -303,18 +261,32 @@ class NokiaService:
             }
         
         try:
-            device = self.client.devices.get(phone_number=phone)
+            from network_as_code.models.device import DeviceIpv4Addr
             
-            # Create QoD session
+            # QoD requires device with IPv4 address identification.
+            # Use the stored client IP if available, otherwise a placeholder.
+            device_ip = self._current_client_ip or "203.0.113.10"
+            
+            device = self.client.devices.get(
+                phone_number=phone,
+                ipv4_address=DeviceIpv4Addr(
+                    public_address=device_ip,
+                    private_address="192.168.1.100"
+                )
+            )
+            
+            # Create QoD session between device and our application server
             session = device.create_qod_session(
                 profile=profile,
-                duration=3600  # 1 hour
+                duration=3600,  # 1 hour
+                service_ipv4="233.252.0.1"  # Application server endpoint
             )
             
             return {
                 "session_id": session.id if hasattr(session, 'id') else str(session),
                 "profile": profile,
-                "status": "active",
+                "status": session.status if hasattr(session, 'status') else "active",
+                "device_ip": device_ip,
                 "mock": False,
                 "api": "qod"
             }
@@ -324,25 +296,12 @@ class NokiaService:
             return {
                 "session_id": f"qod-error-{uuid.uuid4().hex[:8]}",
                 "profile": profile,
-                "status": "active",
+                "status": "error",
                 "error": str(e),
                 "mock": True,
                 "api": "qod"
             }
     
-    async def deactivate_qod(self, session_id: str) -> dict:
-        """Desactiva sesión QoD."""
-        
-        if self.mock_mode or self.client is None:
-            return {"deactivated": True, "mock": True, "api": "qod"}
-        
-        try:
-            self.client.sessions.delete(session_id)
-            return {"deactivated": True, "mock": False, "api": "qod"}
-        except Exception as e:
-            print(f"Error in deactivate_qod: {e}")
-            return {"deactivated": True, "error": str(e), "mock": True, "api": "qod"}
-
     async def get_congestion(self, phone: str) -> dict:
         """Get network congestion prediction for a device (charger IoT SIM).
 

@@ -69,7 +69,7 @@ async def create_user(data: dict, db: AsyncSession) -> UserDB:
         id=str(uuid.uuid4()),
         name=data["name"],
         email=data["email"],
-        password=data["password"],
+        password=get_password_hash(data["password"]),
         phone=data["phone"],
         vehicle=data["vehicle"],
         vehicle_plate=data["vehicle_plate"],
