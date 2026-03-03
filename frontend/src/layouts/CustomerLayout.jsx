@@ -1,4 +1,4 @@
-import { NavLink, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { NavLink, Routes, Route, Navigate, useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Zap, LayoutDashboard, Map, BatteryCharging, Receipt, LogOut, User } from 'lucide-react';
 import CustomerDashboard from '../pages/customer/Dashboard';
@@ -25,11 +25,11 @@ export default function CustomerLayout() {
         <div className="customer-shell">
             {/* Top Navbar */}
             <header className="customer-navbar glass">
-                <div className="nav-brand">
+                <Link to="/customer/dashboard" className="nav-brand" style={{ textDecoration: 'none' }}>
                     <div className="nav-logo-icon"><Zap size={18} strokeWidth={2.5} /></div>
                     <span className="nav-logo-text">CatLink</span>
                     <span className="nav-badge badge badge-blue">5G</span>
-                </div>
+                </Link>
                 <div className="nav-right">
                     <div className="nav-user">
                         <div className="avatar">{user?.avatar}</div>
